@@ -7,7 +7,13 @@
  */
 
 import { spawn } from "node:child_process";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { resolveDatabaseUrl, describeTarget } from "../src/lib/db-url.mjs";
+
+// Build hosts don't reliably put node_modules/.bin on PATH, so add it
+// ourselves — otherwise `prisma` isn't found during a deploy.
+const localBin = join(dirname(dirname(fileURLToPath(import.meta.url))), "node_modules", ".bin");
 
 const [command, ...args] = process.argv.slice(2);
 if (!command) {
@@ -27,7 +33,11 @@ console.log(
 
 const child = spawn(command, args, {
   stdio: "inherit",
-  env: { ...process.env, DATABASE_URL: resolved.url },
+  env: {
+    ...process.env,
+    DATABASE_URL: resolved.url,
+    PATH: `${localBin}:${process.env.PATH ?? ""}`,
+  },
   shell: process.platform === "win32",
 });
 

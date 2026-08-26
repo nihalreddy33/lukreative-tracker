@@ -108,9 +108,29 @@ database, or append `&schema=lukreative` to isolate it in its own namespace.
 
 ## Deploying
 
-1. Set `DATABASE_URL` and `APP_SECRET` in `.env` and in Vercel.
+Schema changes ship as migrations under `prisma/migrations/`, and the build
+runs `prisma migrate deploy` before `next build`. A deploy therefore creates or
+updates its own tables using the host's environment variables — no need to copy
+a connection string onto a laptop just to run `db:push`.
+
+`GET /api/health` reports which connection variables the running deployment can
+see, whether the database answers, and whether the tables exist. It returns only
+names, booleans and URL shapes, never a value.
+
+After changing `prisma/schema.prisma`, generate a migration and commit it:
+
+```bash
+npx prisma migrate diff --from-migrations prisma/migrations \
+  --to-schema-datamodel prisma/schema.prisma \
+  --shadow-database-url "$DATABASE_URL" --script > prisma/migrations/<name>/migration.sql
+```
+
+For local work against your own database:
+
+1. Set `DATABASE_URL` and `APP_SECRET` in `.env`.
 2. `npm run check:db` to confirm the connection string actually works.
-3. `npm run db:push` to create the tables.
+3. `npm run db:migrate` to apply migrations (or `npm run db:push` for a
+   throwaway database you don't mind rewriting).
 4. `npm run import -- <xlsx>` to load the tracker — this prints fresh share
    links, and they are new tokens, so send the new ones out.
 

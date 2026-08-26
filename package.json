@@ -9,7 +9,8 @@
     "postinstall": "prisma generate",
     "db:push": "node scripts/with-db-env.mjs prisma db push",
     "import": "node scripts/import-xlsx.mjs",
-    "check:db": "node scripts/check-db.mjs"
+    "check:db": "node scripts/check-db.mjs",
+    "db:migrate": "node scripts/with-db-env.mjs prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",
