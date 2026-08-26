@@ -29,8 +29,22 @@ export function newShareToken() {
 
 export async function isAdmin() {
   const jar = await cookies();
-  const c = jar.get(ADMIN_COOKIE)?.value;
-  return !!c && sameString(c, sign("admin"));
+  return checkAdminCookie(jar.get(ADMIN_COOKIE)?.value);
+}
+
+/**
+ * Same check, reading the cookie off a NextRequest.
+ *
+ * Route Handlers get their cookies from the request; calling next/headers'
+ * cookies() there throws "called outside a request scope" once the body has
+ * been touched, so upload routes use this instead.
+ */
+export function isAdminRequest(request) {
+  return checkAdminCookie(request.cookies.get(ADMIN_COOKIE)?.value);
+}
+
+function checkAdminCookie(value) {
+  return !!value && sameString(value, sign("admin"));
 }
 
 export async function signInAdmin(password) {
@@ -78,15 +92,18 @@ export async function grantClientSession(slug, token) {
  * present. Returns null when the caller has neither a valid token nor a
  * valid cookie — callers should render "link not valid" in that case.
  */
-export async function resolveClient(slug, token) {
+export async function resolveClient(slug, token, request = null) {
   const client = await prisma.client.findUnique({ where: { slug } });
   if (!client || client.archived) return null;
 
   if (token && sameString(token, client.shareToken)) return client;
 
-  const jar = await cookies();
-  const c = jar.get(clientCookie(slug))?.value;
-  if (c && sameString(c, sign(`client:${slug}:${client.shareToken}`))) return client;
+  // As above: prefer the request's own cookies when we have them.
+  const value = request
+    ? request.cookies.get(clientCookie(slug))?.value
+    : (await cookies()).get(clientCookie(slug))?.value;
+
+  if (value && sameString(value, sign(`client:${slug}:${client.shareToken}`))) return client;
 
   return null;
 }

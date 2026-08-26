@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { approveRequest, declineRequest } from "@/lib/actions";
 import { PRIORITIES } from "@/lib/constants";
 import { fmt } from "@/lib/dates";
@@ -8,6 +9,7 @@ import { fmt } from "@/lib/dates";
 export default function RequestCard({ req, members }) {
   const [mode, setMode] = useState(null); // null | "approve" | "decline"
   const [pending, start] = useTransition();
+  const router = useRouter();
 
   return (
     <section className="card">
@@ -49,7 +51,7 @@ export default function RequestCard({ req, members }) {
           <form
             className="form-grid"
             style={{ borderTop: "1px solid var(--line)", paddingTop: 14 }}
-            action={(fd) => start(() => approveRequest(fd))}
+            action={(fd) => start(async () => { await approveRequest(fd); router.refresh(); })}
           >
             <input type="hidden" name="id" value={req.id} />
             <label className="field span-2">
@@ -94,7 +96,7 @@ export default function RequestCard({ req, members }) {
           <form
             className="stack-v"
             style={{ borderTop: "1px solid var(--line)", paddingTop: 14, gap: 12 }}
-            action={(fd) => start(() => declineRequest(fd))}
+            action={(fd) => start(async () => { await declineRequest(fd); router.refresh(); })}
           >
             <input type="hidden" name="id" value={req.id} />
             <label className="field">

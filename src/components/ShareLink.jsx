@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { regenerateShareToken } from "@/lib/actions";
 
 /**
@@ -12,6 +13,7 @@ export default function ShareLink({ clientId, slug, token, compact }) {
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
   const [pending, start] = useTransition();
+  const router = useRouter();
 
   useEffect(() => setOrigin(window.location.origin), []);
 
@@ -40,7 +42,7 @@ export default function ShareLink({ clientId, slug, token, compact }) {
       </div>
       {!compact ? (
         <form
-          action={(fd) => start(() => regenerateShareToken(fd))}
+          action={(fd) => start(async () => { await regenerateShareToken(fd); router.refresh(); })}
           onSubmit={(e) => {
             if (
               !window.confirm(

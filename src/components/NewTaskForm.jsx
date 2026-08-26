@@ -1,12 +1,14 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createTask } from "@/lib/actions";
 import { STATUSES, PRIORITIES } from "@/lib/constants";
 
 export default function NewTaskForm({ clients, members, fixedClientId }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
+  const router = useRouter();
   const ref = useRef(null);
 
   if (!open) {
@@ -31,6 +33,7 @@ export default function NewTaskForm({ clients, members, fixedClientId }) {
             await createTask(fd);
             ref.current?.reset();
             setOpen(false);
+            router.refresh();
           })
         }
       >

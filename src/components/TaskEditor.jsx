@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { updateTask, addPrerequisite, removePrerequisite } from "@/lib/actions";
 import { STATUSES, PRIORITIES } from "@/lib/constants";
 import { fmt } from "@/lib/dates";
+import Attachments from "./Attachments";
 
 /**
  * Full edit for one task, plus its prerequisites. Opens over the page rather
@@ -14,6 +16,7 @@ export default function TaskEditor({ task, clients, members, candidates }) {
   const [mode, setMode] = useState("new"); // how to add a prerequisite
   const [error, setError] = useState(null);
   const [pending, start] = useTransition();
+  const router = useRouter();
 
   const blocking = (task.prerequisites ?? []).filter((p) => p.status !== "Completed");
 
@@ -29,8 +32,9 @@ export default function TaskEditor({ task, clients, members, candidates }) {
     start(async () => {
       setError(null);
       const res = await action(fd);
-      if (res?.error) setError(res.error);
-      else after?.();
+      if (res?.error) { setError(res.error); return; }
+      router.refresh();
+      after?.();
     });
 
   return (
@@ -121,6 +125,13 @@ export default function TaskEditor({ task, clients, members, candidates }) {
               </button>
             </div>
           </form>
+
+          <hr style={{ border: 0, borderTop: "1px solid var(--line)" }} />
+
+          <div className="stack-v" style={{ gap: 10 }}>
+            <h3>Reference images</h3>
+            <Attachments taskId={task.id} attachments={task.attachments ?? []} />
+          </div>
 
           <hr style={{ border: 0, borderTop: "1px solid var(--line)" }} />
 

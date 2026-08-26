@@ -10,6 +10,7 @@ import { Card, Stat, BarList, RequestPill, Empty } from "@/components/ui";
 import { STATUSES, PRIORITIES } from "@/lib/constants";
 import { summarise, countBy } from "@/lib/metrics";
 import { applyFilters, sortTasks } from "@/lib/filter";
+import { ATTACHMENT_FIELDS } from "@/lib/attachments";
 import { today, fmt } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export default async function ClientDashboard({ params, searchParams }) {
           assignee: true,
           client: true,
           prerequisites: { include: { assignee: true } },
+          attachments: { select: ATTACHMENT_FIELDS },
         },
       },
       requests: { orderBy: { createdAt: "desc" } },

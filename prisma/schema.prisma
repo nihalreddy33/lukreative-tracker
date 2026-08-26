@@ -70,6 +70,8 @@ model Task {
   prerequisites Task[] @relation("TaskDependency")
   blocks        Task[] @relation("TaskDependency")
 
+  attachments Attachment[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -101,4 +103,27 @@ model TaskRequest {
 
   @@index([clientId])
   @@index([status])
+}
+
+/// Reference images for a task. Bytes live in the database rather than object
+/// storage so the app stays self-contained — the browser downscales each image
+/// before upload, which keeps rows small enough for that to be reasonable.
+///
+/// Never select `data` when listing; it is only ever read by the route that
+/// serves a single image.
+model Attachment {
+  id       Int    @id @default(autoincrement())
+  taskId   Int
+  task     Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  filename String
+  mimeType String
+  size     Int
+  width    Int?
+  height   Int?
+  caption  String @default("")
+  data     Bytes
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
 }

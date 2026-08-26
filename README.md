@@ -43,6 +43,22 @@ A task with unfinished prerequisites shows a "waiting on…" marker in the list.
 Circular dependencies are refused, checked across the whole chain rather than
 just the direct link.
 
+## Reference images
+
+Tasks take reference images, added from the same Edit dialog. The browser
+downscales each one to 1600px on its longest edge before upload — a phone photo
+is typically 4–8 MB, and stored as-is that would bloat every row for no visible
+gain. In testing a 3000×2000 image went from 229 KB to 28 KB.
+
+Bytes live in Postgres rather than object storage, so the app stays
+self-contained with nothing extra to provision. `/api/attachments/<id>` serves
+one image and is exactly as private as the task it hangs off: the team sees
+everything, a client sees an image only with a valid session for that client and
+only when the task is client-visible. Anyone else gets a 404.
+
+Listing queries select metadata only — never `data` — so browsing tasks never
+pulls image bytes out of the database.
+
 ## Daily reminders
 
 **Daily reminders** in the sidebar groups every open task by the person who owns

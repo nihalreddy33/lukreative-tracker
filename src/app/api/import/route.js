@@ -1,8 +1,24 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/auth";
+import { isAdminRequest } from "@/lib/auth";
 import { parseWorkbook, applyToDatabase } from "@/lib/import-tracker.mjs";
+
+
+
+/**
+ * revalidatePath throws "static generation store missing" from route handlers
+ * whose async context has been broken by reading the request body. The client
+ * calls router.refresh() after these calls anyway, so a failure here must not
+ * turn a successful write into a 500.
+ */
+function revalidateQuietly(path, type) {
+  try {
+    revalidatePath(path, type);
+  } catch {
+    // Nothing to do — the caller refreshes.
+  }
+}
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -11,7 +27,7 @@ const MAX_BYTES = 4 * 1024 * 1024;
 
 /** POST an .xlsx as multipart form-data. Team session required. */
 export async function POST(request) {
-  if (!(await isAdmin())) {
+  if (!isAdminRequest(request)) {
     return NextResponse.json({ error: "Not authorised." }, { status: 401 });
   }
 
@@ -58,7 +74,7 @@ export async function POST(request) {
 
   try {
     const result = await applyToDatabase(prisma, parsed);
-    revalidatePath("/", "layout");
+    revalidateQuietly("/", "layout");
     return NextResponse.json({
       ok: true,
       sheets: parsed.sheets,

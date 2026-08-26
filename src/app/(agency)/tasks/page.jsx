@@ -6,6 +6,7 @@ import Filters from "@/components/Filters";
 import { Card } from "@/components/ui";
 import { STATUSES, PRIORITIES } from "@/lib/constants";
 import { applyFilters, sortTasks } from "@/lib/filter";
+import { ATTACHMENT_FIELDS } from "@/lib/attachments";
 import { today } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export default async function TasksPage({ searchParams }) {
         client: true,
         assignee: true,
         prerequisites: { include: { assignee: true } },
+        attachments: { select: ATTACHMENT_FIELDS },
       },
     }),
     prisma.client.findMany({ where: { archived: false }, orderBy: { name: "asc" } }),

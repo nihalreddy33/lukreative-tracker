@@ -43,6 +43,13 @@ export default function TaskTable({ tasks, members, clients = [], showClient = t
                   <div className="t-sub">
                     {[t.channel, t.notes?.split("\n")[0]].filter(Boolean).join(" · ") || `#${t.id}`}
                   </div>
+                  {t.attachments?.length ? (
+                    <div style={{ marginTop: 4 }}>
+                      <span className="pill slate">
+                        {t.attachments.length} image{t.attachments.length === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                  ) : null}
                   {blocked.length ? (
                     <div style={{ marginTop: 4 }}>
                       <span className="pill amber" title={blocked.map((b) => b.title).join(", ")}>

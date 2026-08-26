@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { ATTACHMENT_FIELDS } from "@/lib/attachments";
+import Attachments from "@/components/Attachments";
 import { resolveClient } from "@/lib/auth";
 import ClaimLink from "@/components/ClaimLink";
 import RequestForm from "@/components/RequestForm";
@@ -39,7 +41,10 @@ export default async function ClientPortal({ params, searchParams }) {
   const [tasks, requests] = await Promise.all([
     prisma.task.findMany({
       where: { clientId: client.id, visibleToClient: true },
-      include: { assignee: { select: { name: true } } },
+      include: {
+        assignee: { select: { name: true } },
+        attachments: { select: ATTACHMENT_FIELDS },
+      },
     }),
     prisma.taskRequest.findMany({
       where: { clientId: client.id },
@@ -100,6 +105,11 @@ export default async function ClientPortal({ params, searchParams }) {
                       <td data-label="">
                         <div className="t-title">{t.title}</div>
                         {t.channel ? <div className="t-sub">{t.channel}</div> : null}
+                        {t.attachments?.length ? (
+                          <div style={{ marginTop: 8 }}>
+                            <Attachments taskId={t.id} attachments={t.attachments} readOnly />
+                          </div>
+                        ) : null}
                       </td>
                       <td data-label="Status" className="nowrap">
                         <Pill tone={STATUS_TONE[t.status] || "slate"}>

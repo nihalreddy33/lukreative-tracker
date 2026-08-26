@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/actions";
 
 const SWATCHES = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6", "#f43f5e"];
@@ -9,6 +10,7 @@ export default function NewClientForm() {
   const [open, setOpen] = useState(false);
   const [color, setColor] = useState(SWATCHES[0]);
   const [pending, start] = useTransition();
+  const router = useRouter();
   const ref = useRef(null);
 
   if (!open) {
@@ -29,6 +31,7 @@ export default function NewClientForm() {
             await createClient(fd);
             ref.current?.reset();
             setOpen(false);
+            router.refresh();
           })
         }
       >
