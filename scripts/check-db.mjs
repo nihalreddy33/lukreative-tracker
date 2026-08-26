@@ -1,63 +1,27 @@
 /**
  * Connection smoke test.  npm run check:db
  *
- * Validates DATABASE_URL, opens a real connection, reports whether the tables
- * exist and what's in them. Every failure explains the fix rather than
- * surfacing a raw driver error.
+ * Reports which variable supplied the connection string, opens a real
+ * connection, and shows what's in the tables. Every failure explains the fix
+ * rather than surfacing a raw driver error.
  */
 
 import { PrismaClient } from "@prisma/client";
-
-const url = process.env.DATABASE_URL;
+import { resolveDatabaseUrl, describeTarget } from "../src/lib/db-url.mjs";
 
 const die = (msg) => {
   console.error(`\n  ✗ ${msg}\n`);
   process.exit(1);
 };
 
-if (!url) {
-  die(
-    "DATABASE_URL is not set.\n" +
-      "    Add it to .env locally, and to Vercel's environment variables for deploys.\n" +
-      "    Vercel may have named it DATABASE1_DATABASE_URL — Prisma only reads\n" +
-      "    DATABASE_URL, so add a plain one with the same value."
-  );
-}
+const resolved = resolveDatabaseUrl();
+if (!resolved.url) die(resolved.reason);
 
-if (url.startsWith("prisma+postgres://")) {
-  die(
-    "That's the Prisma Accelerate URL.\n" +
-      "    It speaks HTTP and needs @prisma/extension-accelerate, which this app\n" +
-      "    doesn't use. Use the direct connection string instead — the value that\n" +
-      "    starts with postgres:// (DATABASE1_DATABASE_URL or DATABASE1_POSTGRES_URL)."
-  );
-}
+const target = describeTarget(resolved.url);
+console.log(`\n  Using ${resolved.source}`);
+console.log(`  Connecting to ${target} …`);
 
-if (url.startsWith("file:")) {
-  die(
-    "That's a SQLite path, but the datasource provider is postgresql.\n" +
-      "    Put a postgres:// connection string in .env."
-  );
-}
-
-if (!/^postgres(ql)?:\/\//.test(url)) {
-  die(`DATABASE_URL should start with postgres:// — got "${url.slice(0, 24)}…"`);
-}
-
-if (/USER:PASSWORD|user:password|HOST:5432/.test(url)) {
-  die("DATABASE_URL is still the placeholder. Paste your real connection string into .env.");
-}
-
-// Show where we're connecting without leaking the password.
-let target = "(unparseable URL)";
-try {
-  const u = new URL(url);
-  target = `${u.hostname}${u.port ? `:${u.port}` : ""}${u.pathname}`;
-} catch {}
-
-console.log(`\n  Connecting to ${target} …`);
-
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ datasourceUrl: resolved.url });
 
 try {
   await prisma.$queryRaw`SELECT 1`;
@@ -67,11 +31,13 @@ try {
   if (/Can't reach database server|ECONNREFUSED|ETIMEDOUT/i.test(m)) {
     die(
       `Reached no server at ${target}.\n` +
-        "    Check the host and port, and that the database allows connections\n" +
+        "    Check the host and port, and that the database accepts connections\n" +
         "    from your IP (most hosts need sslmode=require)."
     );
   }
-  if (/authentication failed|password/i.test(m)) die("Wrong username or password in DATABASE_URL.");
+  if (/authentication failed|password/i.test(m)) {
+    die(`Wrong username or password in ${resolved.source}.`);
+  }
   if (/does not exist/i.test(m)) die(`The database named in the URL doesn't exist: ${target}`);
   die(m.split("\n")[0]);
 }

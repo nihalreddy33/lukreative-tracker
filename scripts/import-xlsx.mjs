@@ -10,8 +10,16 @@
 import { PrismaClient } from "@prisma/client";
 import { randomBytes } from "node:crypto";
 import { readWorkbook } from "./xlsx.mjs";
+import { resolveDatabaseUrl, describeTarget } from "../src/lib/db-url.mjs";
 
-const prisma = new PrismaClient();
+const resolved = resolveDatabaseUrl();
+if (!resolved.url) {
+  console.error(`\n  \u2717 ${resolved.reason}\n`);
+  process.exit(1);
+}
+console.log(`Using ${resolved.source} \u2192 ${describeTarget(resolved.url)}`);
+
+const prisma = new PrismaClient({ datasourceUrl: resolved.url });
 
 // Column layout of both task sheets.
 const COL = {

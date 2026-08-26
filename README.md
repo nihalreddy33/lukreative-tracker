@@ -80,10 +80,27 @@ It goes in two places:
 - **On Vercel** — Settings → Environment Variables, ticked for Production,
   Preview *and* Development. `APP_SECRET` goes here too.
 
-If you connected the database through Vercel's integration, it may have created
-prefixed names like `DATABASE1_DATABASE_URL`. Prisma only reads `DATABASE_URL`,
-so add a plain `DATABASE_URL` with the same value rather than renaming things —
-that keeps local and production identical and lets the Prisma CLI work.
+### Variable names
+
+Vercel's database integration creates prefixed names rather than a plain
+`DATABASE_URL`. No duplicate variable is needed — the app checks, in order:
+
+| Name | |
+|---|---|
+| `DATABASE_URL` | set this to override the rest |
+| `DATABASE1_DATABASE_URL` | created by Vercel's integration |
+| `DATABASE1_POSTGRES_URL` | same, alternative name |
+
+The first usable `postgres://` value wins. Placeholders and leftover `file:`
+SQLite paths are skipped rather than shadowing a real value, so a stale `.env`
+can't break a deploy.
+
+`DATABASE1_PRISMA_DATABASE_URL` is deliberately **not** in that list: it is the
+Accelerate URL, which speaks HTTP and needs `@prisma/extension-accelerate`. If
+it's the only one available the app refuses it and says so.
+
+The Prisma CLI only ever reads `DATABASE_URL`, so `npm run db:push` runs through
+a small wrapper that injects whichever value was resolved.
 
 Sharing a database with another Prisma app is a trap: this schema defines a
 `Task` table and so do others, and `db:push` would alter theirs. Use a separate
