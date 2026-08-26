@@ -52,6 +52,13 @@ The team password is `APP_SECRET` in `.env`. Change it before anyone else uses t
 
 ### Importing the Excel tracker
 
+Sign in and use **Import from Excel** in the sidebar, which uploads the workbook
+and imports it server-side — the deployment's own credentials are used, so no
+connection string has to be copied anywhere.
+
+The same import also runs from the command line against whatever database
+`.env` points at:
+
 ```bash
 npm run import -- "/path/to/Lukreative Digital Marketing Task Tracker.xlsx"
 ```

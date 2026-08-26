@@ -55,7 +55,12 @@ const textOf = (xml) =>
  * Row order is preserved; blank cells are simply absent.
  */
 export function readWorkbook(path) {
-  const files = unzip(readFileSync(path));
+  return readWorkbookBuffer(readFileSync(path));
+}
+
+/** Same, for a workbook already in memory (an upload, say). */
+export function readWorkbookBuffer(buffer) {
+  const files = unzip(buffer);
   const get = (name) => files.get(name)?.toString("utf8") ?? "";
 
   const shared = [...get("xl/sharedStrings.xml").matchAll(/<si>([\s\S]*?)<\/si>/g)]

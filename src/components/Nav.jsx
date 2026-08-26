@@ -58,6 +58,7 @@ export default function Nav({ clients, openCount, pendingCount }) {
 
       <div className="nav-group">
         <Item href="/team" label="Team" exact />
+        <Item href="/import" label="Import from Excel" exact />
       </div>
 
       <div className="nav-foot">
