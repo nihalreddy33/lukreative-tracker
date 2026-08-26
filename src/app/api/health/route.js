@@ -67,7 +67,9 @@ export async function GET() {
       report.hint =
         "Connected, but the tables do not exist. Run `npm run db:push` locally " +
         "against this same database to create them.";
-      report.error = String(e.message || e).split("\n")[0];
+      // Prisma leaves this empty for some schema errors; only report it when useful.
+      const detail = String(e.message || e).split("\n").find((l) => l.trim());
+      if (detail) report.error = detail.trim();
       return NextResponse.json(report, { status: 503 });
     }
   } catch (e) {
