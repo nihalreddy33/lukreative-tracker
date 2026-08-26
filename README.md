@@ -92,8 +92,9 @@ database, or append `&schema=lukreative` to isolate it in its own namespace.
 ## Deploying
 
 1. Set `DATABASE_URL` and `APP_SECRET` in `.env` and in Vercel.
-2. `npm run db:push` to create the tables.
-3. `npm run import -- <xlsx>` to load the tracker — this prints fresh share
+2. `npm run check:db` to confirm the connection string actually works.
+3. `npm run db:push` to create the tables.
+4. `npm run import -- <xlsx>` to load the tracker — this prints fresh share
    links, and they are new tokens, so send the new ones out.
 
 ## Layout
