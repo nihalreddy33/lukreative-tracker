@@ -28,6 +28,18 @@ bar, so it stays out of screenshots and browser history. Later visits to
 - **Archive** a client and their link stops working; their tasks are kept.
 - Any task can be flipped to **Hidden** so internal work never shows up client-side.
 
+## Daily reminders
+
+**Daily reminders** in the sidebar groups every open task by the person who owns
+it, split into overdue / due today / the next few days / undated. Each person has
+a **Copy for WhatsApp** button producing a plain-text nudge (WhatsApp only
+understands `*bold*`, so the rest stays plain), and **Send** opens WhatsApp with
+it prefilled. **Copy whole team** produces one digest for a group chat, skipping
+anyone with nothing open.
+
+The range switches between today, three days and a week. What's shown on screen
+is the same string that gets copied.
+
 ## Approval flow
 
 1. Client submits a request from their portal.

@@ -40,6 +40,7 @@ export default function Nav({ clients, openCount, pendingCount }) {
           count={pendingCount}
           alert={pendingCount > 0}
         />
+        <Item href="/reminders" label="Daily reminders" exact />
       </div>
 
       <div className="nav-group">
