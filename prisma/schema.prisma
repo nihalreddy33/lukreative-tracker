@@ -64,6 +64,12 @@ model Task {
   // Set when the task was created by approving a client request.
   request TaskRequest?
 
+  // Work that must finish before this task can start, and the mirror side:
+  // tasks waiting on this one. Self-referencing many-to-many, because a task
+  // can need several things and can hold up several others.
+  prerequisites Task[] @relation("TaskDependency")
+  blocks        Task[] @relation("TaskDependency")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

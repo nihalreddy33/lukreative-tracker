@@ -22,7 +22,13 @@ export default async function ClientDashboard({ params, searchParams }) {
   const client = await prisma.client.findUnique({
     where: { slug },
     include: {
-      tasks: { include: { assignee: true, client: true } },
+      tasks: {
+        include: {
+          assignee: true,
+          client: true,
+          prerequisites: { include: { assignee: true } },
+        },
+      },
       requests: { orderBy: { createdAt: "desc" } },
     },
   });
@@ -111,6 +117,7 @@ export default async function ClientDashboard({ params, searchParams }) {
           <TaskTable
             tasks={visible}
             members={members}
+            clients={allClients}
             showClient={false}
             emptyText="No tasks match these filters."
           />

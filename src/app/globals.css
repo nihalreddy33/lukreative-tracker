@@ -118,12 +118,7 @@ p { margin: 0; }
 .g-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .g-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 1100px) { .g-4 { grid-template-columns: repeat(2, minmax(0,1fr)); } .g-3, .g-2 { grid-template-columns: 1fr; } }
-@media (max-width: 720px) {
-  .g-4 { grid-template-columns: 1fr; }
-  .shell { flex-direction: column; }
-  .nav { width: auto; flex: none; height: auto; position: static; }
-  .main { padding: 18px 16px 48px; }
-}
+@media (max-width: 720px) { .g-4 { grid-template-columns: 1fr; } }
 
 /* ------------------------------------------------------------------ stats */
 
@@ -294,3 +289,229 @@ input:focus, select:focus, textarea:focus {
 /* The native select arrow needs room inside a pill-styled inline select,
    otherwise it sits on top of the last character of the status. */
 select.inline-select.pill { padding-right: 26px; }
+
+
+/* ==========================================================================
+   Mobile. The sidebar becomes a slim top bar with a slide-in menu, and wide
+   tables turn into stacked cards — a phone can't usefully scroll an
+   eight-column row sideways.
+   ========================================================================== */
+
+.nav-bar { display: none; }
+.nav-scrim { display: none; }
+
+@media (max-width: 860px) {
+  .shell { flex-direction: column; }
+  .main { padding: 16px 14px 56px; }
+
+  /* Slim bar, always visible, so content starts at the top of the screen. */
+  .nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: var(--nav);
+    padding: 10px 14px;
+  }
+  .nav-bar .nav-brand { text-decoration: none; }
+  .nav-bar .nav-brand strong { color: #fff; }
+
+  .nav-burger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    min-width: 44px;
+    justify-content: center;
+    padding: 0 12px;
+    font: inherit;
+    font-size: 17px;
+    line-height: 1;
+    color: #fff;
+    background: rgba(255, 255, 255, .08);
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 9px;
+    cursor: pointer;
+  }
+
+  /* The menu drops down from under the bar. Toggled with display rather than
+     opacity/visibility: a transition on those two left the panel stuck in the
+     wrong state, and an animation isn't worth that. */
+  .nav {
+    display: none;
+    position: fixed;
+    top: 58px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    flex: none;
+    height: auto;
+    z-index: 39;
+    padding: 14px;
+    gap: 18px;
+    overflow-y: auto;
+  }
+  .nav.open { display: flex; }
+  .nav-brand-desktop { display: none; }
+
+  .nav a.nav-item { min-height: 42px; font-size: 15px; }
+
+  .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 58px 0 0;
+    z-index: 38;
+    background: rgba(2, 6, 23, .45);
+    border: 0;
+  }
+
+  .nav-foot { padding-top: 8px; }
+}
+
+@media (max-width: 720px) {
+  h1 { font-size: 21px; }
+  .page-head { gap: 12px; margin-bottom: 16px; }
+  .page-head > .row { width: 100%; }
+  .page-head > .row > .btn,
+  .page-head > .row > form { flex: 1 1 auto; }
+
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .span-2, .form-grid .span-4 { grid-column: span 1; }
+
+  /* 16px keeps iOS from zooming the viewport when a field is focused. */
+  input[type=text], input[type=date], input[type=password], input[type=email],
+  select, textarea { font-size: 16px; padding: 9px 11px; }
+
+  .btn { min-height: 40px; }
+  .btn.sm { min-height: 34px; }
+
+  .tabs { overflow-x: auto; flex-wrap: nowrap; }
+  .tabs a { white-space: nowrap; }
+
+  .linkbox { flex-wrap: wrap; padding: 8px; }
+  .linkbox code { flex: 1 0 100%; margin-bottom: 6px; }
+
+  .portal { padding: 0 14px 48px; }
+  .portal-top .portal { display: block; }
+  .portal-top .chip { margin-top: 10px; }
+  /* Drop the desktop overlap, which otherwise cuts the dark band through the
+     first card instead of behind it. */
+  .portal-top { margin-bottom: 0; padding-bottom: 20px; }
+  .portal-body { padding-top: 20px; }
+
+  /* Let a card's title and its aside stack rather than squeeze together. */
+  .card-head { flex-wrap: wrap; align-items: flex-start; gap: 4px 12px; }
+  .card-head > .row { width: 100%; }
+
+  .stat { padding: 13px 14px; }
+  .stat .value { font-size: 26px; }
+
+  .bar-row { grid-template-columns: 96px 1fr 34px; }
+
+  /* Tables marked stack-mobile become one card per row. */
+  table.tbl.stack-mobile thead { display: none; }
+  table.tbl.stack-mobile,
+  table.tbl.stack-mobile tbody,
+  table.tbl.stack-mobile tr,
+  table.tbl.stack-mobile td { display: block; width: 100%; }
+
+  table.tbl.stack-mobile tr {
+    border-bottom: 1px solid var(--line);
+    padding: 12px 2px 14px;
+  }
+  table.tbl.stack-mobile tr:last-child { border-bottom: 0; }
+  table.tbl.stack-mobile tbody tr:hover { background: transparent; }
+
+  table.tbl.stack-mobile td {
+    border: 0;
+    padding: 3px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 30px;
+  }
+  table.tbl.stack-mobile td::before {
+    content: attr(data-label);
+    flex: none;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  /* The first cell is the row's title: full width, no label. */
+  table.tbl.stack-mobile td[data-label=""]::before { content: none; }
+  table.tbl.stack-mobile td[data-label=""] {
+    display: block;
+    padding-bottom: 8px;
+  }
+  table.tbl.stack-mobile td .t-title { font-size: 15px; }
+  table.tbl.stack-mobile td > form,
+  table.tbl.stack-mobile td > .row { margin-left: auto; }
+  table.tbl.stack-mobile td input[type=date] { width: auto; max-width: 170px; }
+  table.tbl.stack-mobile .inline-select { border-color: var(--line-strong); background: var(--surface); }
+}
+
+/* ------------------------------------------------------------------ modal */
+
+.modal-scrim {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(2, 6, 23, .5);
+}
+.modal {
+  position: fixed; z-index: 61;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(88vh, 900px);
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 50px rgba(16, 24, 40, .22);
+  text-align: left;
+}
+.modal .card-head { flex: none; }
+.modal-body { padding: 16px; overflow-y: auto; }
+.dep-row {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+@media (max-width: 720px) {
+  .modal {
+    top: 0; left: 0; transform: none;
+    width: 100vw; max-width: 100vw;
+    height: 100dvh; max-height: 100dvh;
+    border-radius: 0; border: 0;
+  }
+  .dep-row { flex-wrap: wrap; gap: 6px; }
+}
+
+/* ------------------------------------------------------------------ brand */
+
+/* The logo is dark ink on white, so on the navy chrome it sits on its own
+   light plate rather than being inverted — inverting would wreck the bird. */
+.brand-logo {
+  display: block;
+  height: 42px;
+  width: auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 5px 10px;
+}
+.brand-sub {
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.nav-brand { flex-direction: column; align-items: flex-start; gap: 5px; }
+.nav-bar .nav-brand { flex-direction: row; align-items: center; gap: 10px; }
+.portal-logo { height: 30px; margin-bottom: 12px; }

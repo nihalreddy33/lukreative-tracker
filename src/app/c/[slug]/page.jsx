@@ -62,6 +62,7 @@ export default async function ClientPortal({ params, searchParams }) {
       <div className="portal-top" style={{ background: `linear-gradient(120deg, #0f172a, ${client.color}33)` }}>
         <div className="portal">
           <div>
+            <img src="/logo.png" alt="Lukreative Studio" className="brand-logo portal-logo" />
             <h1>{client.name}</h1>
             <p className="sub">Your work with Lukreative Solutions · updated {fmt(from)}</p>
           </div>
@@ -89,24 +90,24 @@ export default async function ClientPortal({ params, searchParams }) {
         <Card title={`Work in progress (${active.length})`} bodyless>
           {active.length ? (
             <div className="table-wrap">
-              <table className="tbl">
+              <table className="tbl stack-mobile">
                 <thead>
                   <tr><th>Task</th><th>Status</th><th>Owner</th><th className="nowrap">Target date</th></tr>
                 </thead>
                 <tbody>
                   {active.map((t) => (
                     <tr key={t.id}>
-                      <td>
+                      <td data-label="">
                         <div className="t-title">{t.title}</div>
                         {t.channel ? <div className="t-sub">{t.channel}</div> : null}
                       </td>
-                      <td className="nowrap">
+                      <td data-label="Status" className="nowrap">
                         <Pill tone={STATUS_TONE[t.status] || "slate"}>
                           {CLIENT_STATUS_LABEL[t.status] || t.status}
                         </Pill>
                       </td>
-                      <td className="nowrap small">{t.assignee?.name ?? "Lukreative team"}</td>
-                      <td className="nowrap small">
+                      <td data-label="Owner" className="nowrap small">{t.assignee?.name ?? "Lukreative team"}</td>
+                      <td data-label="Target" className="nowrap small">
                         {fmt(t.dueDate)}
                         {isOverdue(t, from) ? (
                           <div><span className="pill amber">running late</span></div>
@@ -125,19 +126,19 @@ export default async function ClientPortal({ params, searchParams }) {
         <Card title="Your requests" bodyless>
           {requests.length ? (
             <div className="table-wrap">
-              <table className="tbl">
+              <table className="tbl stack-mobile">
                 <thead>
                   <tr><th>Request</th><th>Sent</th><th>Status</th><th>Reply from us</th></tr>
                 </thead>
                 <tbody>
                   {requests.map((r) => (
                     <tr key={r.id}>
-                      <td>
+                      <td data-label="">
                         <div className="t-title">{r.title}</div>
                         {r.requestedBy ? <div className="t-sub">by {r.requestedBy}</div> : null}
                       </td>
-                      <td className="nowrap small">{fmt(r.createdAt.toISOString().slice(0, 10))}</td>
-                      <td className="nowrap">
+                      <td data-label="Sent" className="nowrap small">{fmt(r.createdAt.toISOString().slice(0, 10))}</td>
+                      <td data-label="Status" className="nowrap">
                         {r.status === "pending" ? (
                           <Pill tone="amber">Awaiting approval</Pill>
                         ) : r.status === "approved" ? (
@@ -146,7 +147,7 @@ export default async function ClientPortal({ params, searchParams }) {
                           <Pill tone="slate">Not taken up</Pill>
                         )}
                       </td>
-                      <td className="small muted">{r.decisionNote || "—"}</td>
+                      <td data-label="Reply" className="small muted">{r.decisionNote || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -160,18 +161,18 @@ export default async function ClientPortal({ params, searchParams }) {
         {delivered.length ? (
           <Card title={`Delivered (${delivered.length})`} bodyless>
             <div className="table-wrap">
-              <table className="tbl">
+              <table className="tbl stack-mobile">
                 <thead>
                   <tr><th>Task</th><th className="nowrap">Delivered</th></tr>
                 </thead>
                 <tbody>
                   {delivered.slice(0, 30).map((t) => (
                     <tr key={t.id}>
-                      <td>
+                      <td data-label="">
                         <div className="t-title">{t.title}</div>
                         {t.channel ? <div className="t-sub">{t.channel}</div> : null}
                       </td>
-                      <td className="nowrap small">{fmt(t.completedDate)}</td>
+                      <td data-label="Delivered" className="nowrap small">{fmt(t.completedDate)}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -97,19 +97,19 @@ export default async function Overview() {
           <Card title={`Overdue (${s.overdue})`} bodyless>
             {s.overdueList.length ? (
               <div className="table-wrap">
-                <table className="tbl">
+                <table className="tbl stack-mobile">
                   <thead>
                     <tr><th>Task</th><th>Owner</th><th className="num-cell">Late by</th></tr>
                   </thead>
                   <tbody>
                     {s.overdueList.slice(0, 12).map((t) => (
                       <tr key={t.id}>
-                        <td>
+                        <td data-label="">
                           <div className="t-title">{t.title}</div>
                           <div className="t-sub">{t.client?.name ?? "No client"} · due {fmt(t.dueDate)}</div>
                         </td>
-                        <td className="nowrap small">{t.assignee?.name ?? "—"}</td>
-                        <td className="num-cell nowrap">
+                        <td data-label="Owner" className="nowrap small">{t.assignee?.name ?? "—"}</td>
+                        <td data-label="Late by" className="num-cell nowrap">
                           <span className="pill red">{lateBy(t, from)}d</span>
                         </td>
                       </tr>
@@ -125,20 +125,20 @@ export default async function Overview() {
           <Card title={`Due in the next 7 days (${dueSoon.length})`} bodyless>
             {dueSoon.length ? (
               <div className="table-wrap">
-                <table className="tbl">
+                <table className="tbl stack-mobile">
                   <thead>
                     <tr><th>Task</th><th>Owner</th><th>Status</th><th className="nowrap">Due</th></tr>
                   </thead>
                   <tbody>
                     {dueSoon.slice(0, 12).map((t) => (
                       <tr key={t.id}>
-                        <td>
+                        <td data-label="">
                           <div className="t-title">{t.title}</div>
                           <div className="t-sub">{t.client?.name ?? "No client"}</div>
                         </td>
-                        <td className="nowrap small">{t.assignee?.name ?? "—"}</td>
-                        <td><StatusPill value={t.status} /></td>
-                        <td className="nowrap small">{fmt(t.dueDate)}</td>
+                        <td data-label="Owner" className="nowrap small">{t.assignee?.name ?? "—"}</td>
+                        <td data-label="Status"><StatusPill value={t.status} /></td>
+                        <td data-label="Due" className="nowrap small">{fmt(t.dueDate)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -153,7 +153,7 @@ export default async function Overview() {
         <Card title="High priority, open" bodyless>
           {open.filter((t) => t.priority === "High").length ? (
             <div className="table-wrap">
-              <table className="tbl">
+              <table className="tbl stack-mobile">
                 <thead>
                   <tr><th>Task</th><th>Client</th><th>Owner</th><th>Status</th><th>Priority</th><th className="nowrap">Due</th></tr>
                 </thead>
@@ -163,12 +163,12 @@ export default async function Overview() {
                     .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"))
                     .map((t) => (
                       <tr key={t.id}>
-                        <td className="t-title">{t.title}</td>
-                        <td className="nowrap small">{t.client?.name ?? "—"}</td>
-                        <td className="nowrap small">{t.assignee?.name ?? "—"}</td>
-                        <td><StatusPill value={t.status} /></td>
-                        <td><PriorityPill value={t.priority} /></td>
-                        <td className="nowrap small">{fmt(t.dueDate)}</td>
+                        <td data-label="" className="t-title">{t.title}</td>
+                        <td data-label="Client" className="nowrap small">{t.client?.name ?? "—"}</td>
+                        <td data-label="Owner" className="nowrap small">{t.assignee?.name ?? "—"}</td>
+                        <td data-label="Status"><StatusPill value={t.status} /></td>
+                        <td data-label="Priority"><PriorityPill value={t.priority} /></td>
+                        <td data-label="Due" className="nowrap small">{fmt(t.dueDate)}</td>
                       </tr>
                     ))}
                 </tbody>

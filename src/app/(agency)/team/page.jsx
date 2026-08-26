@@ -43,7 +43,7 @@ export default async function TeamPage() {
         <Card title="Members" bodyless>
           {members.length ? (
             <div className="table-wrap">
-              <table className="tbl">
+              <table className="tbl stack-mobile">
                 <thead>
                   <tr>
                     <th>Name</th><th>Role</th><th className="num-cell">Open</th>
@@ -58,14 +58,14 @@ export default async function TeamPage() {
                     const late = mine.filter((t) => isOverdue(t, from)).length;
                     return (
                       <tr key={m.id} style={{ opacity: m.active ? 1 : 0.55 }}>
-                        <td className="t-title">{m.name}</td>
-                        <td className="small muted">{m.role || "—"}</td>
-                        <td className="num-cell">{open}</td>
-                        <td className="num-cell">
+                        <td data-label="" className="t-title">{m.name}</td>
+                        <td data-label="Role" className="small muted">{m.role || "—"}</td>
+                        <td data-label="Open" className="num-cell">{open}</td>
+                        <td data-label="Late" className="num-cell">
                           {late ? <span className="pill red">{late}</span> : <span className="muted">0</span>}
                         </td>
-                        <td><StackBar {...s} /></td>
-                        <td className="nowrap">
+                        <td data-label="Mix"><StackBar {...s} /></td>
+                        <td data-label="" className="nowrap">
                           <ConfirmButton
                             action={setMemberActive}
                             className="btn sm ghost"

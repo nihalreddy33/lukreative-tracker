@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AutoForm from "./AutoForm";
 import ConfirmButton from "./ConfirmButton";
+import TaskEditor from "./TaskEditor";
 import { PriorityPill, Empty } from "./ui";
 import { updateTask, deleteTask } from "@/lib/actions";
 import { STATUSES, PRIORITIES, STATUS_TONE } from "@/lib/constants";
@@ -12,13 +13,13 @@ import { lateBy } from "@/lib/metrics";
  * place — no modal — because the daily job here is nudging fields, not
  * authoring long records.
  */
-export default function TaskTable({ tasks, members, showClient = true, emptyText = "No tasks match these filters." }) {
+export default function TaskTable({ tasks, members, clients = [], showClient = true, emptyText = "No tasks match these filters." }) {
   const from = today();
   if (!tasks.length) return <Empty>{emptyText}</Empty>;
 
   return (
     <div className="table-wrap">
-      <table className="tbl">
+      <table className="tbl stack-mobile">
         <thead>
           <tr>
             <th>Task</th>
@@ -34,17 +35,25 @@ export default function TaskTable({ tasks, members, showClient = true, emptyText
         <tbody>
           {tasks.map((t) => {
             const late = isOverdue(t, from);
+            const blocked = (t.prerequisites ?? []).filter((p) => p.status !== "Completed");
             return (
               <tr key={t.id}>
-                <td style={{ minWidth: 240 }}>
+                <td data-label="" style={{ minWidth: 240 }}>
                   <div className="t-title">{t.title}</div>
                   <div className="t-sub">
                     {[t.channel, t.notes?.split("\n")[0]].filter(Boolean).join(" · ") || `#${t.id}`}
                   </div>
+                  {blocked.length ? (
+                    <div style={{ marginTop: 4 }}>
+                      <span className="pill amber" title={blocked.map((b) => b.title).join(", ")}>
+                        waiting on {blocked.length === 1 ? blocked[0].title : `${blocked.length} tasks`}
+                      </span>
+                    </div>
+                  ) : null}
                 </td>
 
                 {showClient ? (
-                  <td className="nowrap small">
+                  <td data-label="Client" className="nowrap small">
                     {t.client ? (
                       <Link href={`/clients/${t.client.slug}`} className="row tight" style={{ color: "inherit" }}>
                         <span className="dot" style={{ background: t.client.color }} />
@@ -56,7 +65,7 @@ export default function TaskTable({ tasks, members, showClient = true, emptyText
                   </td>
                 ) : null}
 
-                <td className="nowrap">
+                <td data-label="Owner" className="nowrap">
                   <AutoForm action={updateTask}>
                     <input type="hidden" name="id" value={t.id} />
                     <select className="inline-select" name="assigneeId" defaultValue={t.assigneeId ?? ""}>
@@ -68,7 +77,7 @@ export default function TaskTable({ tasks, members, showClient = true, emptyText
                   </AutoForm>
                 </td>
 
-                <td className="nowrap">
+                <td data-label="Status" className="nowrap">
                   <AutoForm action={updateTask}>
                     <input type="hidden" name="id" value={t.id} />
                     <select
@@ -83,7 +92,7 @@ export default function TaskTable({ tasks, members, showClient = true, emptyText
                   </AutoForm>
                 </td>
 
-                <td className="nowrap">
+                <td data-label="Priority" className="nowrap">
                   <AutoForm action={updateTask}>
                     <input type="hidden" name="id" value={t.id} />
                     <select className="inline-select" name="priority" defaultValue={t.priority}>
@@ -94,7 +103,7 @@ export default function TaskTable({ tasks, members, showClient = true, emptyText
                   </AutoForm>
                 </td>
 
-                <td className="nowrap">
+                <td data-label="Due" className="nowrap">
                   <AutoForm action={updateTask}>
                     <input type="hidden" name="id" value={t.id} />
                     <input
@@ -113,7 +122,7 @@ export default function TaskTable({ tasks, members, showClient = true, emptyText
                   ) : null}
                 </td>
 
-                <td className="nowrap">
+                <td data-label="Client sees" className="nowrap">
                   <AutoForm action={updateTask}>
                     <input type="hidden" name="id" value={t.id} />
                     <select
@@ -127,7 +136,14 @@ export default function TaskTable({ tasks, members, showClient = true, emptyText
                   </AutoForm>
                 </td>
 
-                <td className="nowrap">
+                <td data-label="" className="nowrap">
+                  <span className="row tight">
+                  <TaskEditor
+                    task={t}
+                    clients={clients}
+                    members={members}
+                    candidates={tasks.filter((o) => o.id !== t.id)}
+                  />
                   <ConfirmButton
                     action={deleteTask}
                     hidden={{ id: t.id }}
@@ -135,6 +151,7 @@ export default function TaskTable({ tasks, members, showClient = true, emptyText
                   >
                     Delete
                   </ConfirmButton>
+                  </span>
                 </td>
               </tr>
             );

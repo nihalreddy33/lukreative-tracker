@@ -13,7 +13,13 @@ export const dynamic = "force-dynamic";
 export default async function TasksPage({ searchParams }) {
   const sp = await searchParams;
   const [tasks, clients, members] = await Promise.all([
-    prisma.task.findMany({ include: { client: true, assignee: true } }),
+    prisma.task.findMany({
+      include: {
+        client: true,
+        assignee: true,
+        prerequisites: { include: { assignee: true } },
+      },
+    }),
     prisma.client.findMany({ where: { archived: false }, orderBy: { name: "asc" } }),
     prisma.member.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);
@@ -37,7 +43,7 @@ export default async function TasksPage({ searchParams }) {
           <Filters clients={clients} members={members} statuses={STATUSES} priorities={PRIORITIES} />
         </Suspense>
         <Card bodyless>
-          <TaskTable tasks={visible} members={members} />
+          <TaskTable tasks={visible} members={members} clients={clients} />
         </Card>
       </div>
     </>

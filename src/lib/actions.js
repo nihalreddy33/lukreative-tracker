@@ -121,6 +121,84 @@ export async function deleteTask(formData) {
   refreshAgency();
 }
 
+/**
+ * Attaches a prerequisite: either an existing task, or a brand new one created
+ * and assigned on the spot (the usual case — "this needs copy from someone
+ * first" is normally work nobody has written down yet).
+ */
+export async function addPrerequisite(formData) {
+  await requireAdmin();
+  const taskId = num(formData, "taskId");
+  if (!taskId) return;
+
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: { prerequisites: { select: { id: true } } },
+  });
+  if (!task) return;
+
+  let prereqId = num(formData, "prerequisiteId");
+
+  if (!prereqId) {
+    const title = str(formData, "newTitle");
+    if (!title) return { error: "Give the prerequisite a name." };
+    const created = await prisma.task.create({
+      data: {
+        title,
+        clientId: task.clientId,
+        assigneeId: num(formData, "newAssigneeId"),
+        priority: oneOf(str(formData, "newPriority"), PRIORITIES, task.priority),
+        dueDate: str(formData, "newDueDate"),
+        status: "Not Started",
+        visibleToClient: task.visibleToClient,
+      },
+    });
+    prereqId = created.id;
+  }
+
+  // A task can't block itself, and refuse a link that would close a cycle.
+  if (prereqId === taskId) return { error: "A task can't depend on itself." };
+  if (await wouldCycle(prereqId, taskId)) {
+    return { error: "That would create a circular dependency." };
+  }
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { prerequisites: { connect: { id: prereqId } } },
+  });
+  refreshAgency();
+}
+
+/** True if `startId` already depends, directly or transitively, on `targetId`. */
+async function wouldCycle(startId, targetId) {
+  const seen = new Set();
+  const queue = [startId];
+  while (queue.length) {
+    const id = queue.shift();
+    if (id === targetId) return true;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const node = await prisma.task.findUnique({
+      where: { id },
+      select: { prerequisites: { select: { id: true } } },
+    });
+    for (const p of node?.prerequisites ?? []) queue.push(p.id);
+  }
+  return false;
+}
+
+export async function removePrerequisite(formData) {
+  await requireAdmin();
+  const taskId = num(formData, "taskId");
+  const prereqId = num(formData, "prerequisiteId");
+  if (!taskId || !prereqId) return;
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { prerequisites: { disconnect: { id: prereqId } } },
+  });
+  refreshAgency();
+}
+
 // ------------------------------------------------------------------- clients
 
 export async function createClient(formData) {

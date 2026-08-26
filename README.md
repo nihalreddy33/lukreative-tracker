@@ -28,6 +28,21 @@ bar, so it stays out of screenshots and browser history. Later visits to
 - **Archive** a client and their link stops working; their tasks are kept.
 - Any task can be flipped to **Hidden** so internal work never shows up client-side.
 
+## Editing tasks and dependencies
+
+**Edit** on any task row opens the full record — name, client, owner, channel,
+priority, status, dates, notes and client visibility. The inline controls in the
+table stay for quick nudges.
+
+The same dialog manages **prerequisites**: work that must finish first. Add an
+existing task, or create one and assign it on the spot — the usual case, since
+"this needs copy first" is normally work nobody has written down yet. A new
+prerequisite inherits the client and visibility of the task it unblocks.
+
+A task with unfinished prerequisites shows a "waiting on…" marker in the list.
+Circular dependencies are refused, checked across the whole chain rather than
+just the direct link.
+
 ## Daily reminders
 
 **Daily reminders** in the sidebar groups every open task by the person who owns

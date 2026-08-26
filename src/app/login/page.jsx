@@ -9,12 +9,9 @@ export default async function LoginPage() {
   return (
     <div className="centered">
       <div className="auth-card stack-v">
-        <div className="row" style={{ justifyContent: "center", gap: 10 }}>
-          <span className="nav-mark">L</span>
-          <div>
-            <strong style={{ fontSize: 16 }}>Lukreative Solutions</strong>
-            <div className="small muted">Task Tracker</div>
-          </div>
+        <div className="stack-v" style={{ alignItems: "center", gap: 6 }}>
+          <img src="/logo.png" alt="Lukreative Studio" style={{ width: 210, height: "auto" }} />
+          <div className="small muted">Task Tracker</div>
         </div>
         <LoginForm />
         <p className="small muted" style={{ textAlign: "center" }}>
