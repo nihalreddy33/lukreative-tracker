@@ -2,6 +2,8 @@ node_modules
 .next
 dist
 .env
+.env.*
+!.env.example
 *.db
 *.db-journal
 .DS_Store

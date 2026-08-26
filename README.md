@@ -44,7 +44,7 @@ request can never read "approved" without the task actually existing.
 
 ```bash
 npm install
-npm run db:push     # create the database from prisma/schema.prisma
+npm run db:push     # create the tables (needs DATABASE_URL set — see below)
 npm run dev         # http://localhost:3200
 ```
 
@@ -63,15 +63,38 @@ dates. Re-running updates instead of duplicating — tasks are matched on
 
 The Dashboard and Calc_Data sheets are ignored; the app recomputes those numbers.
 
+## Database configuration
+
+`DATABASE_URL` must be a **direct** Postgres connection string:
+
+```
+postgres://user:password@host:5432/dbname?sslmode=require
+```
+
+Not the `prisma+postgres://` Accelerate URL — that speaks HTTP and would need
+`@prisma/extension-accelerate`, which this app does not use.
+
+It goes in two places:
+
+- **Locally** — `.env` (gitignored, never deployed).
+- **On Vercel** — Settings → Environment Variables, ticked for Production,
+  Preview *and* Development. `APP_SECRET` goes here too.
+
+If you connected the database through Vercel's integration, it may have created
+prefixed names like `DATABASE1_DATABASE_URL`. Prisma only reads `DATABASE_URL`,
+so add a plain `DATABASE_URL` with the same value rather than renaming things —
+that keeps local and production identical and lets the Prisma CLI work.
+
+Sharing a database with another Prisma app is a trap: this schema defines a
+`Task` table and so do others, and `db:push` would alter theirs. Use a separate
+database, or append `&schema=lukreative` to isolate it in its own namespace.
+
 ## Deploying
 
-Local dev uses SQLite. For a deployment your clients can reach, switch to Postgres:
-
-1. In `prisma/schema.prisma`, change `provider = "sqlite"` to `provider = "postgresql"`.
-2. Set `DATABASE_URL` to the Postgres connection string and `APP_SECRET` to a real password.
-3. `npm run db:push`, then `npm run import -- <xlsx>` against the new database.
-
-Every field type in the schema is valid on both, so nothing else changes.
+1. Set `DATABASE_URL` and `APP_SECRET` in `.env` and in Vercel.
+2. `npm run db:push` to create the tables.
+3. `npm run import -- <xlsx>` to load the tracker — this prints fresh share
+   links, and they are new tokens, so send the new ones out.
 
 ## Layout
 

@@ -1,14 +1,19 @@
 // Lukreative Solutions — agency task tracker.
-// Local dev runs on SQLite. To deploy on Postgres, change `provider` to
-// "postgresql" and point DATABASE_URL at the Postgres connection string;
-// every field type below is valid on both.
+//
+// Postgres in every environment. DATABASE_URL must be a direct connection
+// string (postgres://…). Vercel's database integration may expose it under a
+// prefixed name such as DATABASE1_DATABASE_URL — add a plain DATABASE_URL
+// alongside it rather than renaming this, so the Prisma CLI works too.
+//
+// Not the prisma+postgres:// Accelerate URL: that speaks HTTP and needs
+// @prisma/extension-accelerate, which this app does not use.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
