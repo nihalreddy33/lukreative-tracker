@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
-import { isAdmin } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import LoginForm from "@/components/LoginForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
-  if (await isAdmin()) redirect("/");
+  const session = await getSession();
+  if (session) redirect(session.isAdmin ? "/" : "/my");
   return (
     <div className="centered">
       <div className="auth-card stack-v">
@@ -15,7 +16,7 @@ export default async function LoginPage() {
         </div>
         <LoginForm />
         <p className="small muted" style={{ textAlign: "center" }}>
-          Clients don&apos;t sign in here — they use the share link you send them.
+          Leave the name blank to sign in with the owner password. Clients don&apos;t sign in here — they use the share link you send them.
         </p>
       </div>
     </div>

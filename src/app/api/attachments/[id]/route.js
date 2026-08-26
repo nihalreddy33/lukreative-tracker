@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { isAdminRequest, resolveClient } from "@/lib/auth";
+import { getSession, resolveClient } from "@/lib/auth";
 
-
+export const dynamic = "force-dynamic";
 
 /**
  * revalidatePath throws "static generation store missing" from route handlers
@@ -19,33 +19,47 @@ function revalidateQuietly(path, type) {
   }
 }
 
-export const dynamic = "force-dynamic";
+const parseId = (raw) => {
+  const n = Number(raw);
+  return n && !Number.isNaN(n) ? n : null;
+};
 
 /**
- * Serves one image. The team sees everything; a client sees an image only when
- * they hold a valid session for that client AND the task is client-visible —
- * an attachment is exactly as private as the task it hangs off.
+ * May this caller see the image? Admins yes; a member only on their own task;
+ * a client only with a valid session for their client and only when the task is
+ * client-visible.
  */
+async function canRead(session, att, request) {
+  if (session?.isAdmin) return true;
+  if (session?.memberId && att.task?.assigneeId === session.memberId) return true;
+
+  const slug = att.task?.client?.slug;
+  if (!att.task?.visibleToClient || !slug) return false;
+  return !!(await resolveClient(slug, null, request));
+}
+
 export async function GET(request, { params }) {
-  const { id } = await params;
-  const attachmentId = Number(id);
-  if (!attachmentId || Number.isNaN(attachmentId)) {
-    return new NextResponse("Not found", { status: 404 });
-  }
+  const id = parseId((await params).id);
+  if (!id) return new NextResponse("Not found", { status: 404 });
 
   const att = await prisma.attachment.findUnique({
-    where: { id: attachmentId },
+    where: { id },
     include: {
-      task: { select: { visibleToClient: true, client: { select: { slug: true } } } },
+      task: {
+        select: {
+          assigneeId: true,
+          visibleToClient: true,
+          client: { select: { slug: true } },
+        },
+      },
     },
   });
   if (!att) return new NextResponse("Not found", { status: 404 });
 
-  if (!isAdminRequest(request)) {
-    const slug = att.task?.client?.slug;
-    const allowed =
-      att.task?.visibleToClient && slug && (await resolveClient(slug, null, request));
-    if (!allowed) return new NextResponse("Not found", { status: 404 });
+  const session = await getSession(request);
+  // 404 rather than 403, so a refusal doesn't confirm the image exists.
+  if (!(await canRead(session, att, request))) {
+    return new NextResponse("Not found", { status: 404 });
   }
 
   return new NextResponse(Buffer.from(att.data), {
@@ -61,14 +75,23 @@ export async function GET(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-  if (!isAdminRequest(request)) {
-    return NextResponse.json({ error: "Not authorised." }, { status: 401 });
-  }
-  const { id } = await params;
-  const attachmentId = Number(id);
-  if (!attachmentId) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  const id = parseId((await params).id);
+  if (!id) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  await prisma.attachment.delete({ where: { id: attachmentId } }).catch(() => {});
+  const session = await getSession(request);
+  if (!session) return NextResponse.json({ error: "Not authorised." }, { status: 401 });
+
+  const att = await prisma.attachment.findUnique({
+    where: { id },
+    select: { id: true, task: { select: { assigneeId: true } } },
+  });
+  if (!att) return NextResponse.json({ error: "Not found." }, { status: 404 });
+
+  if (!session.isAdmin && att.task?.assigneeId !== session.memberId) {
+    return NextResponse.json({ error: "Not authorised." }, { status: 403 });
+  }
+
+  await prisma.attachment.delete({ where: { id } });
   revalidateQuietly("/", "layout");
   return NextResponse.json({ ok: true });
 }

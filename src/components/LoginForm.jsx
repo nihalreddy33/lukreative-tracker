@@ -8,8 +8,18 @@ export default function LoginForm() {
   return (
     <form action={action} className="card card-body stack-v">
       <label className="field">
-        <span>Team password</span>
-        <input type="password" name="password" autoFocus required />
+        <span>Your name</span>
+        <input
+          type="text"
+          name="identifier"
+          autoFocus
+          autoComplete="username"
+          placeholder="e.g. Pavan"
+        />
+      </label>
+      <label className="field">
+        <span>Password</span>
+        <input type="password" name="password" required autoComplete="current-password" />
       </label>
       {state?.error ? <div className="notice err">{state.error}</div> : null}
       <button className="btn primary" type="submit" disabled={pending}>

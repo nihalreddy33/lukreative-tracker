@@ -5,11 +5,14 @@ import { redirect } from "next/navigation";
 import { prisma } from "./prisma";
 import {
   requireAdmin,
+  requireSession,
   requireClient,
   signInAdmin,
+  signInMember,
   signOutAdmin,
   newShareToken,
   grantClientSession,
+  hashPassword,
 } from "./auth";
 import { today } from "./dates";
 import { STATUSES, PRIORITIES } from "./constants";
@@ -45,9 +48,19 @@ function refreshAgency() {
 // ------------------------------------------------------------------ sessions
 
 export async function loginAction(_prev, formData) {
-  const ok = await signInAdmin(str(formData, "password"));
-  if (!ok) return { error: "That password doesn't match." };
-  redirect("/");
+  const who = str(formData, "identifier");
+  const password = str(formData, "password");
+
+  // No name given means the owner's break-glass password, which is also how
+  // the app worked before accounts existed.
+  if (!who) {
+    if (await signInAdmin(password)) redirect("/");
+    return { error: "That password doesn't match." };
+  }
+
+  const member = await signInMember(who, password);
+  if (!member) return { error: "That name and password don't match." };
+  redirect(member.isAdmin ? "/" : "/my");
 }
 
 export async function logoutAction() {
@@ -79,10 +92,26 @@ export async function createTask(formData) {
   refreshAgency();
 }
 
+// What a member may change on their own task. Everything else — who owns it,
+// which client it belongs to, its priority, whether the client can see it — is
+// a scheduling decision that stays with an admin.
+const MEMBER_EDITABLE = new Set(["status", "startDate", "dueDate", "notes", "channel"]);
+
 export async function updateTask(formData) {
-  await requireAdmin();
+  const session = await requireSession();
   const id = num(formData, "id");
   if (!id) return;
+
+  if (!session.isAdmin) {
+    const owned = await prisma.task.findFirst({
+      where: { id, assigneeId: session.memberId },
+      select: { id: true },
+    });
+    if (!owned) throw new Error("Not authorised");
+    for (const key of formData.keys()) {
+      if (key !== "id" && !MEMBER_EDITABLE.has(key)) throw new Error("Not authorised");
+    }
+  }
 
   const data = {};
   const has = (k) => formData.get(k) !== null;
@@ -278,6 +307,48 @@ export async function setMemberActive(formData) {
     data: { active: str(formData, "active") === "yes" },
   });
   refreshAgency();
+}
+
+export async function setMemberPassword(formData) {
+  await requireAdmin();
+  const id = num(formData, "id");
+  const password = str(formData, "password");
+  if (!id) return;
+  if (password && password.length < 6) {
+    return { error: "Use at least 6 characters." };
+  }
+  await prisma.member.update({
+    where: { id },
+    // An empty value clears the password, which locks the account out of
+    // signing in without deleting any of their task history.
+    data: { passwordHash: password ? hashPassword(password) : "" },
+  });
+  refreshAgency();
+  return { ok: true };
+}
+
+export async function updateMemberAccess(formData) {
+  const session = await requireAdmin();
+  const id = num(formData, "id");
+  if (!id) return;
+
+  const makeAdmin = str(formData, "isAdmin") === "yes";
+
+  // Don't let the last admin demote themselves out of the admin pages.
+  if (!makeAdmin) {
+    const admins = await prisma.member.count({ where: { isAdmin: true, active: true } });
+    const target = await prisma.member.findUnique({ where: { id }, select: { isAdmin: true } });
+    if (target?.isAdmin && admins <= 1 && session.kind !== "owner") {
+      return { error: "That's the only admin left." };
+    }
+  }
+
+  await prisma.member.update({
+    where: { id },
+    data: { isAdmin: makeAdmin, email: str(formData, "email") },
+  });
+  refreshAgency();
+  return { ok: true };
 }
 
 // ------------------------------------------------------------------ requests

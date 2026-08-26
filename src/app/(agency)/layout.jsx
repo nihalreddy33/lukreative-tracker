@@ -1,12 +1,15 @@
 import { redirect } from "next/navigation";
 import Nav from "@/components/Nav";
-import { isAdmin } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
 export default async function AgencyLayout({ children }) {
-  if (!(await isAdmin())) redirect("/login");
+  const session = await getSession();
+  if (!session) redirect("/login");
+  // A member has no business on the agency pages; their own list is at /my.
+  if (!session.isAdmin) redirect("/my");
 
   const [clients, openCount, pendingCount] = await Promise.all([
     prisma.client.findMany({

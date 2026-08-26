@@ -35,8 +35,15 @@ model Client {
 model Member {
   id     Int     @id @default(autoincrement())
   name   String  @unique
-  role   String  @default("")
+  role   String  @default("") // job title, e.g. "Performance marketing"
   active Boolean @default(true)
+
+  // Sign-in. The admin sets passwords directly; with a team this size an
+  // email-based reset flow would be more moving parts than it is worth.
+  // `role` above stays the job title — this is the permission flag.
+  email        String  @default("")
+  passwordHash String  @default("") // "salt:hash", empty until a password is set
+  isAdmin      Boolean @default(false)
 
   tasks Task[]
 }

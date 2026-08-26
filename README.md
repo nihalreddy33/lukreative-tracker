@@ -43,6 +43,34 @@ A task with unfinished prerequisites shows a "waiting on…" marker in the list.
 Circular dependencies are refused, checked across the whole chain rather than
 just the direct link.
 
+## Accounts and access
+
+Two kinds of sign-in, both on `/login`:
+
+- **A team member** enters their name (or email) and password. They land on
+  `/my` and see only tasks assigned to them.
+- **The owner** leaves the name blank and enters `APP_SECRET`. This is the
+  break-glass login and is how the app worked before accounts existed — keep it
+  working so nobody can be locked out.
+
+An admin manages sign-in from the **Team** page: set or change a password, add
+an email, and switch someone between Member and Admin. Passwords are scrypt
+hashed with a per-password salt. Changing a password signs that person out
+everywhere, since the session signature covers the hash. Saving an empty
+password blocks sign-in without touching their task history.
+
+### What a member can and cannot do
+
+A member sees only their own tasks and may change status, dates, notes,
+channel, and reference images on them. Who owns a task, which client it belongs
+to, its priority and whether the client can see it are scheduling decisions that
+stay with an admin — along with approving client requests, managing clients and
+share links, deleting tasks, and importing the spreadsheet.
+
+This is enforced in the server actions and route handlers, not just hidden in
+the UI: a member editing a field they don't own, or attaching an image to
+someone else's task, is refused regardless of what the page offers.
+
 ## Reference images
 
 Tasks take reference images, added from the same Edit dialog. The browser

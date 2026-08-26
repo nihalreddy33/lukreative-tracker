@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { isAdminRequest } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import {
   ATTACHMENT_FIELDS,
   MAX_UPLOAD_BYTES,
@@ -28,7 +28,8 @@ export const maxDuration = 30;
 
 /** POST multipart: taskId, file, optional caption. Team session required. */
 export async function POST(request) {
-  if (!isAdminRequest(request)) {
+  const session = await getSession(request);
+  if (!session) {
     return NextResponse.json({ error: "Not authorised." }, { status: 401 });
   }
 
@@ -66,8 +67,15 @@ export async function POST(request) {
     return NextResponse.json({ error: "That file isn't a real image." }, { status: 415 });
   }
 
-  const task = await prisma.task.findUnique({ where: { id: taskId }, select: { id: true } });
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: { id: true, assigneeId: true },
+  });
   if (!task) return NextResponse.json({ error: "That task no longer exists." }, { status: 404 });
+  // A member may only attach to their own work.
+  if (!session.isAdmin && task.assigneeId !== session.memberId) {
+    return NextResponse.json({ error: "Not authorised." }, { status: 403 });
+  }
 
   const created = await prisma.attachment.create({
     data: {
