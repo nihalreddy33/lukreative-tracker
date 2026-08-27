@@ -43,6 +43,28 @@ A task with unfinished prerequisites shows a "waiting on…" marker in the list.
 Circular dependencies are refused, checked across the whole chain rather than
 just the direct link.
 
+## Repeating work
+
+A task can repeat — daily, weekly on chosen days, or monthly on a day of the
+month, at any interval. Set it up once from **+ New task**; **Repeating work**
+in the sidebar lists the series, pause/resume, and end them.
+
+Each due date becomes its own task, rather than one task whose date keeps
+moving, so completion, notes and attachments stay per occurrence and the
+history survives. By default a series waits while the previous occurrence is
+still open, which stops a month of identical unfinished tasks piling up; that
+can be switched off per series.
+
+Occurrences are generated lazily on an admin page load rather than by a
+scheduler, so there is no cron to run. Task has a unique
+`(recurrenceId, occurrenceDate)`, so two simultaneous page loads can't create
+the same occurrence twice — the loser of the race fails harmlessly.
+
+The date maths lives in `src/lib/recurrence.js`, kept pure so it can be checked
+without a database or a clock: month-end clamping (the 31st becomes the 30th in
+a short month, then returns to the 31st), leap days, and interval anchoring are
+all covered.
+
 ## Accounts and access
 
 Two kinds of sign-in, both on `/login`:

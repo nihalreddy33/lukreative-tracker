@@ -43,6 +43,13 @@ export default function TaskTable({ tasks, members, clients = [], showClient = t
                   <div className="t-sub">
                     {[t.channel, t.notes?.split("\n")[0]].filter(Boolean).join(" · ") || `#${t.id}`}
                   </div>
+                  {t.recurrenceId ? (
+                    <div style={{ marginTop: 4 }}>
+                      <span className="pill brand" title="Created from a repeating series">
+                        ↻ repeats
+                      </span>
+                    </div>
+                  ) : null}
                   {t.attachments?.length ? (
                     <div style={{ marginTop: 4 }}>
                       <span className="pill slate">

@@ -66,6 +66,7 @@ export default function Nav({ clients, openCount, pendingCount }) {
             onNavigate={close}
           />
           <Item href="/reminders" label="Daily reminders" exact onNavigate={close} />
+        <Item href="/recurring" label="Repeating work" exact onNavigate={close} />
         </div>
 
         <div className="nav-group">

@@ -2,12 +2,14 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createTask } from "@/lib/actions";
+import { createTask, createRecurrence } from "@/lib/actions";
+import RepeatFields from "./RepeatFields";
 import { STATUSES, PRIORITIES } from "@/lib/constants";
 
 export default function NewTaskForm({ clients, members, fixedClientId }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
+  const [error, setError] = useState(null);
   const router = useRouter();
   const ref = useRef(null);
 
@@ -30,7 +32,15 @@ export default function NewTaskForm({ clients, members, fixedClientId }) {
         className="card-body form-grid"
         action={(fd) =>
           start(async () => {
-            await createTask(fd);
+            setError(null);
+            // A repeating task is a series, not a one-off: creating the series
+            // generates the first occurrence itself.
+            const repeats = String(fd.get("frequency") || "Never") !== "Never";
+            const res = repeats ? await createRecurrence(fd) : await createTask(fd);
+            if (res?.error) {
+              setError(res.error);
+              return;
+            }
             ref.current?.reset();
             setOpen(false);
             router.refresh();
@@ -103,6 +113,11 @@ export default function NewTaskForm({ clients, members, fixedClientId }) {
           <span>Notes / links</span>
           <input type="text" name="notes" placeholder="Reference links, brief notes…" />
         </label>
+
+        <div className="span-4" style={{ borderTop: "1px solid var(--line)", paddingTop: 4 }} />
+        <RepeatFields />
+
+        {error ? <div className="notice err span-4">{error}</div> : null}
 
         <div className="span-4 row">
           <button className="btn primary" type="submit" disabled={pending}>

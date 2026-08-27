@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Nav from "@/components/Nav";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { generateDueOccurrences } from "@/lib/generate-recurring";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,10 @@ export default async function AgencyLayout({ children }) {
   if (!session) redirect("/login");
   // A member has no business on the agency pages; their own list is at /my.
   if (!session.isAdmin) redirect("/my");
+
+  // Repeating work is generated lazily on an admin page load rather than by a
+  // scheduler, so the app needs no cron. It is idempotent.
+  await generateDueOccurrences().catch(() => {});
 
   const [clients, openCount, pendingCount] = await Promise.all([
     prisma.client.findMany({

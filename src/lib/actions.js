@@ -16,6 +16,8 @@ import {
 } from "./auth";
 import { today } from "./dates";
 import { STATUSES, PRIORITIES } from "./constants";
+import { FREQUENCIES, parseWeekdays } from "./recurrence";
+import { generateDueOccurrences } from "./generate-recurring";
 
 const str = (fd, k) => String(fd.get(k) ?? "").trim();
 const num = (fd, k) => {
@@ -228,6 +230,97 @@ export async function removePrerequisite(formData) {
   refreshAgency();
 }
 
+// ----------------------------------------------------------------- recurring
+
+/** Reads the repeat fields off a task form. Returns null when repeat is off. */
+function readRule(formData) {
+  const frequency = str(formData, "frequency");
+  if (!frequency || frequency === "Never" || !FREQUENCIES.includes(frequency)) return null;
+
+  const weekdays = formData.getAll("weekdays").map(String).filter(Boolean).join(",");
+  return {
+    frequency,
+    weekdays: frequency === "Weekly" ? weekdays : "",
+    monthDay: frequency === "Monthly" ? Math.min(31, Math.max(1, num(formData, "monthDay") || 1)) : null,
+    interval: Math.min(52, Math.max(1, num(formData, "interval") || 1)),
+    leadDays: Math.min(90, Math.max(0, num(formData, "leadDays") ?? 7)),
+    skipIfOpen: str(formData, "skipIfOpen") !== "no",
+    startDate: str(formData, "startDate") || today(),
+    endDate: str(formData, "endDate"),
+  };
+}
+
+export async function createRecurrence(formData) {
+  await requireAdmin();
+  const title = str(formData, "title");
+  const rule = readRule(formData);
+  if (!title || !rule) return { error: "Give it a name and a repeat pattern." };
+  if (rule.frequency === "Weekly" && !parseWeekdays(rule.weekdays).length) {
+    return { error: "Pick at least one day of the week." };
+  }
+
+  await prisma.recurrence.create({
+    data: {
+      ...rule,
+      title,
+      clientId: num(formData, "clientId"),
+      assigneeId: num(formData, "assigneeId"),
+      channel: str(formData, "channel"),
+      priority: oneOf(str(formData, "priority"), PRIORITIES, "Medium"),
+      notes: str(formData, "notes"),
+      visibleToClient: str(formData, "visibleToClient") !== "no",
+    },
+  });
+
+  // Create the first occurrence straight away, so the series doesn't look
+  // inert until the next page load.
+  await generateDueOccurrences();
+  refreshAgency();
+  return { ok: true };
+}
+
+export async function updateRecurrence(formData) {
+  await requireAdmin();
+  const id = num(formData, "id");
+  if (!id) return;
+  const rule = readRule(formData);
+  if (!rule) return { error: "Pick a repeat pattern." };
+
+  await prisma.recurrence.update({
+    where: { id },
+    data: {
+      ...rule,
+      title: str(formData, "title"),
+      assigneeId: num(formData, "assigneeId"),
+      priority: oneOf(str(formData, "priority"), PRIORITIES, "Medium"),
+    },
+  });
+  await generateDueOccurrences();
+  refreshAgency();
+  return { ok: true };
+}
+
+export async function setRecurrenceActive(formData) {
+  await requireAdmin();
+  const id = num(formData, "id");
+  if (!id) return;
+  await prisma.recurrence.update({
+    where: { id },
+    data: { active: str(formData, "active") === "yes" },
+  });
+  if (str(formData, "active") === "yes") await generateDueOccurrences();
+  refreshAgency();
+}
+
+/** Ends the series. Tasks already created are left alone. */
+export async function deleteRecurrence(formData) {
+  await requireAdmin();
+  const id = num(formData, "id");
+  if (!id) return;
+  await prisma.recurrence.delete({ where: { id } });
+  refreshAgency();
+}
+
 // ------------------------------------------------------------------- clients
 
 export async function createClient(formData) {
@@ -309,44 +402,45 @@ export async function setMemberActive(formData) {
   refreshAgency();
 }
 
-export async function setMemberPassword(formData) {
-  await requireAdmin();
-  const id = num(formData, "id");
-  const password = str(formData, "password");
-  if (!id) return;
-  if (password && password.length < 6) {
-    return { error: "Use at least 6 characters." };
-  }
-  await prisma.member.update({
-    where: { id },
-    // An empty value clears the password, which locks the account out of
-    // signing in without deleting any of their task history.
-    data: { passwordHash: password ? hashPassword(password) : "" },
-  });
-  refreshAgency();
-  return { ok: true };
-}
-
-export async function updateMemberAccess(formData) {
+/**
+ * One save for a member's sign-in settings.
+ *
+ * An empty password box means "leave the password alone" — it used to clear it,
+ * which meant changing somebody's role locked them out of the app. Removing a
+ * password is now its own explicit action.
+ */
+export async function updateMemberAccount(formData) {
   const session = await requireAdmin();
   const id = num(formData, "id");
-  if (!id) return;
+  if (!id) return { error: "Unknown member." };
+
+  const password = str(formData, "password");
+  if (password && password.length < 6) return { error: "Use at least 6 characters." };
 
   const makeAdmin = str(formData, "isAdmin") === "yes";
+  const target = await prisma.member.findUnique({ where: { id } });
+  if (!target) return { error: "Unknown member." };
 
   // Don't let the last admin demote themselves out of the admin pages.
-  if (!makeAdmin) {
+  if (target.isAdmin && !makeAdmin && session.kind !== "owner") {
     const admins = await prisma.member.count({ where: { isAdmin: true, active: true } });
-    const target = await prisma.member.findUnique({ where: { id }, select: { isAdmin: true } });
-    if (target?.isAdmin && admins <= 1 && session.kind !== "owner") {
-      return { error: "That's the only admin left." };
-    }
+    if (admins <= 1) return { error: "That's the only admin left." };
   }
 
-  await prisma.member.update({
-    where: { id },
-    data: { isAdmin: makeAdmin, email: str(formData, "email") },
-  });
+  const data = { email: str(formData, "email"), isAdmin: makeAdmin };
+  if (password) data.passwordHash = hashPassword(password);
+
+  await prisma.member.update({ where: { id }, data });
+  refreshAgency();
+  return { ok: true, passwordChanged: !!password };
+}
+
+/** Blocks sign-in without touching any of their task history. */
+export async function removeMemberPassword(formData) {
+  await requireAdmin();
+  const id = num(formData, "id");
+  if (!id) return;
+  await prisma.member.update({ where: { id }, data: { passwordHash: "" } });
   refreshAgency();
   return { ok: true };
 }

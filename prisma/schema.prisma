@@ -28,8 +28,9 @@ model Client {
   archived     Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  tasks    Task[]
-  requests TaskRequest[]
+  tasks       Task[]
+  requests    TaskRequest[]
+  recurrences Recurrence[]
 }
 
 model Member {
@@ -45,7 +46,8 @@ model Member {
   passwordHash String  @default("") // "salt:hash", empty until a password is set
   isAdmin      Boolean @default(false)
 
-  tasks Task[]
+  tasks       Task[]
+  recurrences Recurrence[]
 }
 
 model Task {
@@ -78,6 +80,14 @@ model Task {
   blocks        Task[] @relation("TaskDependency")
 
   attachments Attachment[]
+
+  // Set when this task was generated from a repeating series.
+  recurrenceId   Int?
+  recurrence     Recurrence? @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
+  occurrenceDate String      @default("") // the date in the series this one covers
+
+  // Stops a second generation run creating the same occurrence twice.
+  @@unique([recurrenceId, occurrenceDate])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -133,4 +143,45 @@ model Attachment {
   createdAt DateTime @default(now())
 
   @@index([taskId])
+}
+
+/// A repeating piece of work. The series is created once; each due date becomes
+/// its own Task, so completion, notes and attachments stay per occurrence
+/// instead of being overwritten every week.
+model Recurrence {
+  id     Int     @id @default(autoincrement())
+  active Boolean @default(true)
+
+  // What to create each time.
+  title           String
+  clientId        Int?
+  client          Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  assigneeId      Int?
+  assignee        Member? @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  channel         String  @default("")
+  priority        String  @default("Medium")
+  notes           String  @default("")
+  visibleToClient Boolean @default(true)
+
+  // When it falls due.
+  frequency String @default("Weekly") // Daily | Weekly | Monthly
+  weekdays  String @default("") // CSV, 0 = Sunday, for Weekly
+  monthDay  Int? // day of month, for Monthly
+  interval  Int    @default(1) // every N days/weeks/months
+
+  // How far ahead to create the next one, so it shows up before it's due.
+  leadDays Int @default(7)
+
+  // Don't create the next one while the previous is still open, which would
+  // otherwise pile up a month of identical unfinished tasks.
+  skipIfOpen Boolean @default(true)
+
+  startDate String @default("")
+  endDate   String @default("")
+
+  createdAt DateTime @default(now())
+
+  tasks Task[]
+
+  @@index([active])
 }
