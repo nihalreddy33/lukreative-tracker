@@ -43,6 +43,25 @@ A task with unfinished prerequisites shows a "waiting on…" marker in the list.
 Circular dependencies are refused, checked across the whole chain rather than
 just the direct link.
 
+## Calendar
+
+**Calendar** shows every client's work month by month, tasks placed on their due
+date and coloured by client, filterable by client, owner, and whether completed
+work is shown. The month is in the URL, so a particular month is a link.
+
+Festivals and public holidays are seeded on first run — Indian national
+holidays plus the regional days a Hyderabad agency plans around. Anything can be
+edited, removed, or added from the bottom of the page.
+
+The distinction that matters: a day marked *same date every year* (Independence
+Day, Republic Day) is stored once and repeats. Lunar and Islamic festivals
+(Diwali, Holi, Eid, Onam) are stored against a specific year and never repeat
+automatically, because they move — repeating them would silently put them on the
+wrong date. 2026 is seeded; later years need their dates adding once known.
+
+Dates were cross-checked against the DoPT gazetted list. Where that disagreed
+with the calendar the team already uses (Milad-un-Nabi), the team's calendar won.
+
 ## Repeating work
 
 A task can repeat — daily, weekly on chosen days, or monthly on a day of the

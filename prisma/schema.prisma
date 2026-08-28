@@ -185,3 +185,26 @@ model Recurrence {
 
   @@index([active])
 }
+
+/// Festivals, public holidays and any other date the team plans around.
+///
+/// `annual` means the same month and day every year — Independence Day is
+/// stored once. Lunar and Islamic festivals move, so they are stored per year
+/// and never repeated automatically, which would put them on the wrong date.
+model ImportantDay {
+  id     Int     @id @default(autoincrement())
+  name   String
+  date   String // "YYYY-MM-DD"
+  annual Boolean @default(false)
+  kind   String  @default("Festival") // Festival | Public holiday | Observance | Custom
+  note   String  @default("")
+
+  // Seeded rows are marked, so the starter set can be told apart from
+  // anything the team added themselves.
+  seeded Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([name, date])
+  @@index([date])
+}

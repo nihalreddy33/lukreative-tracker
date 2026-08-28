@@ -3,6 +3,7 @@ import Nav from "@/components/Nav";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateDueOccurrences } from "@/lib/generate-recurring";
+import { seedImportantDays } from "@/lib/seed-important-days";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,14 @@ export default async function AgencyLayout({ children }) {
 
   // Repeating work is generated lazily on an admin page load rather than by a
   // scheduler, so the app needs no cron. It is idempotent.
-  await generateDueOccurrences().catch(() => {});
+  // Swallowing these silently once hid a seeding failure completely, so they
+  // report rather than disappear. Neither should ever block the page.
+  await generateDueOccurrences().catch((e) =>
+    console.error("[recurring] generation failed:", e?.message)
+  );
+  await seedImportantDays().catch((e) =>
+    console.error("[important-days] seeding failed:", e?.message)
+  );
 
   const [clients, openCount, pendingCount] = await Promise.all([
     prisma.client.findMany({

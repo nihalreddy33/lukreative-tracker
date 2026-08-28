@@ -321,6 +321,56 @@ export async function deleteRecurrence(formData) {
   refreshAgency();
 }
 
+// ------------------------------------------------------------- important days
+
+export async function createImportantDay(formData) {
+  await requireAdmin();
+  const name = str(formData, "name");
+  const date = str(formData, "date");
+  if (!name || !date) return { error: "Give it a name and a date." };
+
+  try {
+    await prisma.importantDay.create({
+      data: {
+        name,
+        date,
+        annual: str(formData, "annual") === "yes",
+        kind: str(formData, "kind") || "Custom",
+        note: str(formData, "note"),
+      },
+    });
+  } catch (e) {
+    if (e?.code === "P2002") return { error: "That day is already on the calendar." };
+    throw e;
+  }
+  refreshAgency();
+  return { ok: true };
+}
+
+export async function updateImportantDay(formData) {
+  await requireAdmin();
+  const id = num(formData, "id");
+  if (!id) return;
+  await prisma.importantDay.update({
+    where: { id },
+    data: {
+      name: str(formData, "name"),
+      date: str(formData, "date"),
+      annual: str(formData, "annual") === "yes",
+      kind: str(formData, "kind") || "Custom",
+    },
+  });
+  refreshAgency();
+  return { ok: true };
+}
+
+export async function deleteImportantDay(formData) {
+  await requireAdmin();
+  const id = num(formData, "id");
+  if (id) await prisma.importantDay.delete({ where: { id } });
+  refreshAgency();
+}
+
 // ------------------------------------------------------------------- clients
 
 export async function createClient(formData) {
