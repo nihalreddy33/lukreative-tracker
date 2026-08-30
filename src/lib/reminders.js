@@ -17,8 +17,15 @@ export function headerDate(iso) {
  * Splits one person's open tasks into the buckets a daily nudge cares about.
  * Every open task lands in exactly one bucket, so nothing is silently dropped.
  */
-export function bucket(tasks, { from = today(), days = 7 } = {}) {
-  const open = tasks.filter((t) => t.status !== "Completed");
+/**
+ * `includeHold` is false for reminders: chasing somebody about work that is
+ * deliberately paused is noise, and it buries the things they can act on. The
+ * held tasks are still returned separately so a caller can note that they exist.
+ */
+export function bucket(tasks, { from = today(), days = 7, includeHold = true } = {}) {
+  const notDone = tasks.filter((t) => t.status !== "Completed");
+  const held = notDone.filter((t) => t.status === "Hold");
+  const open = includeHold ? notDone : notDone.filter((t) => t.status !== "Hold");
   const horizon = addDays(from, days);
 
   const overdue = [];
@@ -40,7 +47,7 @@ export function bucket(tasks, { from = today(), days = 7 } = {}) {
   soon.sort(byDue);
   later.sort(byDue);
 
-  return { open, overdue, dueToday, soon, later, undated };
+  return { open, held, overdue, dueToday, soon, later, undated };
 }
 
 const clientOf = (t) => t.client?.name ?? t.clientName ?? null;
@@ -59,7 +66,7 @@ function line(t, { from, showLate = false, showDate = false }) {
  * *bold* is the only markup it understands, so the rest stays plain.
  */
 export function buildReminder(name, tasks, { from = today(), days = 7 } = {}) {
-  const b = bucket(tasks, { from, days });
+  const b = bucket(tasks, { from, days, includeHold: false });
   const out = [`*${name} — ${headerDate(from)}*`];
 
   if (!b.open.length) {
@@ -94,7 +101,8 @@ export function buildReminder(name, tasks, { from = today(), days = 7 } = {}) {
 export function buildTeamReminder(groups, { from = today(), days = 7 } = {}) {
   const parts = [`*Lukreative — tasks for ${headerDate(from)}*`];
   for (const g of groups) {
-    if (!g.tasks.some((t) => t.status !== "Completed")) continue;
+    const active = g.tasks.some((t) => t.status !== "Completed" && t.status !== "Hold");
+    if (!active) continue;
     parts.push("", "———", buildReminder(g.name, g.tasks, { from, days }));
   }
   return parts.join("\n");

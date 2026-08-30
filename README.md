@@ -140,6 +140,12 @@ anyone with nothing open.
 The range switches between today, three days and a week. What's shown on screen
 is the same string that gets copied.
 
+Tasks on **Hold** are left out — chasing somebody about work that is
+deliberately paused is noise, and it buries what they can act on. The count is
+still noted on screen so held work isn't forgotten, and somebody whose only
+remaining work is on hold drops out of the team digest entirely. Their own
+`/my` page still lists held tasks.
+
 ## Approval flow
 
 1. Client submits a request from their portal.

@@ -104,7 +104,7 @@ export default async function RemindersPage({ searchParams }) {
         ) : null}
 
         {groups.map((g) => {
-          const b = bucket(g.tasks, { from, days });
+          const b = bucket(g.tasks, { from, days, includeHold: false });
           const message = buildReminder(g.name, g.tasks, { from, days });
           const counts = {
             open: b.open.length,
@@ -129,10 +129,14 @@ export default async function RemindersPage({ searchParams }) {
                   <p className="small muted">
                     {b.open.length} open in total
                     {b.later.length ? ` · ${b.later.length} scheduled later` : ""}
+                    {b.held.length ? ` · ${b.held.length} on hold, not shown` : ""}
                   </p>
                 </>
               ) : (
-                <p className="small muted">Nothing open.</p>
+                <p className="small muted">
+                  Nothing to chase.
+                  {b.held.length ? ` ${b.held.length} task${b.held.length === 1 ? "" : "s"} on hold.` : ""}
+                </p>
               )}
             </ReminderCard>
           );
