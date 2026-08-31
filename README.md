@@ -116,7 +116,11 @@ someone else's task, is refused regardless of what the page offers.
 
 Tasks take reference images. Attach them while creating the task, or later from
 **Edit** on any row; a member can do the same on their own tasks from
-**My tasks**. The browser
+**My tasks**.
+
+A task carrying images shows a **🖼 N images** badge in the list — clicking it
+opens a viewer, with arrow keys and Escape, rather than making you open Edit
+just to look at a reference. The browser
 downscales each one to 1600px on its longest edge before upload — a phone photo
 is typically 4–8 MB, and stored as-is that would bloat every row for no visible
 gain. In testing a 3000×2000 image went from 229 KB to 28 KB.

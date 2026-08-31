@@ -607,3 +607,15 @@ select.inline-select.pill { padding-right: 26px; }
   .cal-head, .cal-week { min-width: 700px; }
   .cal-cell { min-height: 96px; }
 }
+
+/* The image-count badge is a button, but should read as the pill it replaced. */
+.peek-badge {
+  border: 1px solid var(--line-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.peek-badge:hover { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.lightbox .row { flex-wrap: wrap; justify-content: center; }

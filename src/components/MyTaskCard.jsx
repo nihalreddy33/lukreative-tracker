@@ -7,6 +7,7 @@ import { STATUSES } from "@/lib/constants";
 import { fmt, isOverdue } from "@/lib/dates";
 import { daysAgo } from "@/lib/dates";
 import Attachments from "./Attachments";
+import AttachmentPeek from "./AttachmentPeek";
 
 /**
  * A member's own task. Only the fields they're allowed to change are offered —
@@ -54,6 +55,7 @@ export default function MyTaskCard({ task, from }) {
             </div>
           </div>
           <div className="row tight nowrap">
+            {task.attachments?.length ? <AttachmentPeek attachments={task.attachments} /> : null}
             {late ? <span className="pill red">{daysAgo(task.dueDate, from)}d late</span> : null}
             <span className={`pill ${task.priority === "High" ? "red" : "slate"}`}>
               {task.priority}

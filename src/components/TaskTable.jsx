@@ -2,6 +2,7 @@ import Link from "next/link";
 import AutoForm from "./AutoForm";
 import ConfirmButton from "./ConfirmButton";
 import TaskEditor from "./TaskEditor";
+import AttachmentPeek from "./AttachmentPeek";
 import { PriorityPill, Empty } from "./ui";
 import { updateTask, deleteTask } from "@/lib/actions";
 import { STATUSES, PRIORITIES, STATUS_TONE } from "@/lib/constants";
@@ -52,9 +53,7 @@ export default function TaskTable({ tasks, members, clients = [], showClient = t
                   ) : null}
                   {t.attachments?.length ? (
                     <div style={{ marginTop: 4 }}>
-                      <span className="pill slate">
-                        {t.attachments.length} image{t.attachments.length === 1 ? "" : "s"}
-                      </span>
+                      <AttachmentPeek attachments={t.attachments} />
                     </div>
                   ) : null}
                   {blocked.length ? (
