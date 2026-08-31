@@ -19,6 +19,28 @@ function revalidateQuietly(path, type) {
   }
 }
 
+
+/**
+ * Builds a Content-Disposition value that cannot break the response.
+ *
+ * HTTP headers are latin1, and real filenames are not: a macOS screenshot is
+ * named "Screenshot … at 10.24.15 AM.png" using U+202F, a narrow no-break
+ * space. Putting that straight into a header throws while constructing the
+ * Response, so the whole image 500s and renders as a broken thumbnail.
+ *
+ * So: an ASCII-safe fallback for `filename`, plus the real name in RFC 5987
+ * form for clients that understand it.
+ */
+function contentDisposition(filename) {
+  const safe =
+    (filename || "image")
+      .replace(/[\r\n"\\]/g, "")       // quotes and control characters
+      .replace(/[^\x20-\x7E]/g, "_")     // anything outside printable ASCII
+      .trim() || "image";
+  const encoded = encodeURIComponent(filename || "image");
+  return `inline; filename="${safe}"; filename*=UTF-8''${encoded}`;
+}
+
 const parseId = (raw) => {
   const n = Number(raw);
   return n && !Number.isNaN(n) ? n : null;
@@ -65,8 +87,9 @@ export async function GET(request, { params }) {
   return new NextResponse(Buffer.from(att.data), {
     headers: {
       "Content-Type": att.mimeType,
-      "Content-Length": String(att.size),
-      "Content-Disposition": `inline; filename="${att.filename.replace(/"/g, "")}"`,
+      // Content-Length is left to the runtime: setting it by hand goes wrong
+      // the moment the platform compresses the response.
+      "Content-Disposition": contentDisposition(att.filename),
       // The bytes behind an id never change, so this can be cached hard. Private
       // because the same URL is refused to anyone without the right session.
       "Cache-Control": "private, max-age=31536000, immutable",
