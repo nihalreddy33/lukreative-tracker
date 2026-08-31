@@ -4,12 +4,15 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createTask, createRecurrence } from "@/lib/actions";
 import RepeatFields from "./RepeatFields";
+import { uploadImages } from "@/lib/image-upload";
 import { STATUSES, PRIORITIES } from "@/lib/constants";
 
 export default function NewTaskForm({ clients, members, fixedClientId }) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState(null);
+  const [images, setImages] = useState([]);
+  const [repeats, setRepeats] = useState(false);
   const router = useRouter();
   const ref = useRef(null);
 
@@ -35,13 +38,26 @@ export default function NewTaskForm({ clients, members, fixedClientId }) {
             setError(null);
             // A repeating task is a series, not a one-off: creating the series
             // generates the first occurrence itself.
-            const repeats = String(fd.get("frequency") || "Never") !== "Never";
-            const res = repeats ? await createRecurrence(fd) : await createTask(fd);
+            const isSeries = String(fd.get("frequency") || "Never") !== "Never";
+            const res = isSeries ? await createRecurrence(fd) : await createTask(fd);
             if (res?.error) {
               setError(res.error);
               return;
             }
+            // Images are chosen before the task exists, so they upload once it
+            // has an id.
+            if (!isSeries && res?.id && images.length) {
+              const problem = await uploadImages(res.id, images);
+              if (problem) {
+                setError(`Task created, but an image didn't upload: ${problem}`);
+                setImages([]);
+                router.refresh();
+                return;
+              }
+            }
             ref.current?.reset();
+            setImages([]);
+            setRepeats(false);
             setOpen(false);
             router.refresh();
           })
@@ -115,7 +131,30 @@ export default function NewTaskForm({ clients, members, fixedClientId }) {
         </label>
 
         <div className="span-4" style={{ borderTop: "1px solid var(--line)", paddingTop: 4 }} />
-        <RepeatFields />
+
+        <label className="field span-2">
+          <span>Reference images</span>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={repeats}
+            onChange={(e) => setImages([...e.target.files])}
+            style={{ fontSize: 13 }}
+          />
+        </label>
+        <div className="field span-2">
+          <span>&nbsp;</span>
+          <p className="small muted">
+            {repeats
+              ? "Add references to each occurrence once it's created."
+              : images.length
+                ? `${images.length} image${images.length === 1 ? "" : "s"} — uploaded once the task is created, shrunk to keep them small.`
+                : "Optional. You can also add them later from Edit."}
+          </p>
+        </div>
+
+        <RepeatFields onRepeatChange={setRepeats} />
 
         {error ? <div className="notice err span-4">{error}</div> : null}
 

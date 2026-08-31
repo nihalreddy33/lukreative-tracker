@@ -10,7 +10,7 @@ import { fmt } from "@/lib/dates";
  * Shows the pattern in words plus the next date, so "every 2 weeks on Thursday"
  * can be sanity-checked before it starts generating work.
  */
-export default function RepeatFields({ value = {}, showNever = true }) {
+export default function RepeatFields({ value = {}, showNever = true, onRepeatChange }) {
   const [frequency, setFrequency] = useState(value.frequency || (showNever ? "Never" : "Weekly"));
   const [weekdays, setWeekdays] = useState(
     new Set(String(value.weekdays || "").split(",").filter(Boolean).map(Number))
@@ -42,7 +42,14 @@ export default function RepeatFields({ value = {}, showNever = true }) {
     <>
       <label className="field span-2">
         <span>Repeat</span>
-        <select name="frequency" value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+        <select
+          name="frequency"
+          value={frequency}
+          onChange={(e) => {
+            setFrequency(e.target.value);
+            onRepeatChange?.(e.target.value !== "Never");
+          }}
+        >
           {showNever ? <option value="Never">Doesn&apos;t repeat</option> : null}
           <option value="Daily">Daily</option>
           <option value="Weekly">Weekly</option>

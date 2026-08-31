@@ -77,7 +77,7 @@ export async function createTask(formData) {
   const title = str(formData, "title");
   if (!title) return;
 
-  await prisma.task.create({
+  const task = await prisma.task.create({
     data: {
       title,
       channel: str(formData, "channel"),
@@ -92,6 +92,9 @@ export async function createTask(formData) {
     },
   });
   refreshAgency();
+  // The id goes back so the caller can attach images that were chosen before
+  // the task existed.
+  return { ok: true, id: task.id };
 }
 
 // What a member may change on their own task. Everything else — who owns it,
