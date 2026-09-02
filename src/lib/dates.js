@@ -1,9 +1,34 @@
 // Date-only helpers. Due dates are stored as "YYYY-MM-DD" strings so they never
 // shift across timezones — a task due the 24th is due the 24th everywhere.
 
-export function today() {
-  const d = new Date();
-  return toISO(d);
+/**
+ * The agency works to Indian time, and this decides what "due today" and
+ * "overdue" mean. Reading the host clock instead would put the rollover at
+ * 05:30 IST on Vercel, which runs UTC — so between midnight and half five in
+ * the morning the app would still believe it was yesterday.
+ *
+ * Fixing it to a zone also keeps server and browser in agreement, whatever
+ * timezone the laptop is set to.
+ */
+export const AGENCY_TIMEZONE = "Asia/Kolkata";
+
+export function today(timeZone = AGENCY_TIMEZONE) {
+  // en-CA formats as YYYY-MM-DD, which is the shape used throughout.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/** Wall-clock time in the agency's zone, for "updated at" labels. */
+export function nowTime(timeZone = AGENCY_TIMEZONE) {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date());
 }
 
 export function toISO(d) {

@@ -143,6 +143,14 @@ understands `*bold*`, so the rest stays plain), and **Send** opens WhatsApp with
 it prefilled. **Copy whole team** produces one digest for a group chat, skipping
 anyone with nothing open.
 
+The page refetches when you arrive, when the tab comes back to the front, and
+once a minute while it's open, showing "Updated HH:MM" — arriving from a cached
+navigation otherwise showed the page as it was earlier.
+
+Dates are computed in **Asia/Kolkata**, not on the host clock. Vercel runs UTC,
+so reading the host would roll "due today" over at 05:30 IST rather than
+midnight. `AGENCY_TIMEZONE` in `src/lib/dates.js` is the one place to change it.
+
 The range switches between today, three days and a week. What's shown on screen
 is the same string that gets copied.
 
