@@ -52,15 +52,25 @@ export default async function RemindersPage({ searchParams }) {
     prisma.member.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.task.findMany({
       where: { status: { not: "Completed" } },
-      include: { client: true },
+      include: { client: true, assignee: { select: { name: true } } },
     }),
   ]);
 
+  // Anyone still holding open work gets a section, including a deactivated
+  // member: their tasks would otherwise belong to no group at all and vanish
+  // from the page entirely.
+  const owners = new Map(members.map((m) => [m.id, m.name]));
+  for (const t of tasks) {
+    if (t.assigneeId && !owners.has(t.assigneeId)) {
+      owners.set(t.assigneeId, `${t.assignee?.name ?? "Unknown"} (inactive)`);
+    }
+  }
+
   const groups = [
-    ...members.map((m) => ({
-      key: String(m.id),
-      name: m.name,
-      tasks: tasks.filter((t) => t.assigneeId === m.id),
+    ...[...owners.entries()].map(([id, name]) => ({
+      key: String(id),
+      name,
+      tasks: tasks.filter((t) => t.assigneeId === id),
     })),
     { key: "unassigned", name: "Unassigned", tasks: tasks.filter((t) => !t.assigneeId) },
   ].filter((g) => g.tasks.length || g.key !== "unassigned");
@@ -128,9 +138,13 @@ export default async function RemindersPage({ searchParams }) {
                     showDate
                   />
                   <Group title="No due date" tone="slate" tasks={b.undated} from={from} />
+                  {/* Listed, not just counted: a task created with a date
+                      further out was otherwise nowhere on this page. It stays
+                      out of the copied message, which is about today. */}
+                  <Group title="Later" tone="slate" tasks={b.later} from={from} showDate />
                   <p className="small muted">
                     {b.open.length} open in total
-                    {b.later.length ? ` · ${b.later.length} scheduled later` : ""}
+                    {b.later.length ? " · later work isn't in the copied message" : ""}
                     {b.held.length ? ` · ${b.held.length} on hold, not shown` : ""}
                   </p>
                 </>

@@ -154,6 +154,12 @@ midnight. `AGENCY_TIMEZONE` in `src/lib/dates.js` is the one place to change it.
 The range switches between today, three days and a week. What's shown on screen
 is the same string that gets copied.
 
+Every open task appears somewhere on the page, including work due beyond the
+chosen range, which sits under **Later**. Only the copied message is
+range-scoped — it is about what to do now, and a task due next month isn't.
+A deactivated member who still holds open work keeps a section too, marked
+inactive, rather than their tasks disappearing.
+
 Tasks on **Hold** are left out — chasing somebody about work that is
 deliberately paused is noise, and it buries what they can act on. The count is
 still noted on screen so held work isn't forgotten, and somebody whose only
