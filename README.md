@@ -62,6 +62,28 @@ wrong date. 2026 is seeded; later years need their dates adding once known.
 Dates were cross-checked against the DoPT gazetted list. Where that disagreed
 with the calendar the team already uses (Milad-un-Nabi), the team's calendar won.
 
+## WhatsApp reminders (Interakt)
+
+Each person's card on **Daily reminders** has a **WhatsApp** button that sends
+their reminder through [Interakt](https://www.interakt.ai/).
+
+WhatsApp only permits pre-approved templates for business-initiated messages,
+and template variables may not contain newlines — so the detailed list cannot be
+sent this way. The template carries a name, two counts and a link:
+
+> Hi {{1}}, you have {{2}} tasks needing attention today — {{3}} overdue.
+> Full list: {{4}}
+
+That is also a deliberate privacy boundary: **no task titles or client names are
+ever sent**. These messages leave through a WhatsApp Business account, and one
+client's work should not appear in another's message logs.
+
+Configure with `INTERAKT_API_KEY`, `INTERAKT_TEMPLATE_NAME`,
+`INTERAKT_TEMPLATE_LANG`, `INTERAKT_COUNTRY_CODE` and `APP_URL`. With no API key
+set, the button reports exactly what it *would* send instead of sending
+anything, so the wiring can be checked first. Numbers are stored per member on
+the Team page and normalised to what Interakt expects.
+
 ## Repeating work
 
 A task can repeat — daily, weekly on chosen days, or monthly on a day of the

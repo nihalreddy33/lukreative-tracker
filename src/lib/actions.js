@@ -18,6 +18,8 @@ import { today } from "./dates";
 import { STATUSES, PRIORITIES } from "./constants";
 import { FREQUENCIES, parseWeekdays } from "./recurrence";
 import { generateDueOccurrences } from "./generate-recurring";
+import { bucket } from "./reminders";
+import { sendTemplate, buildReminderValues, interaktConfig, isConfigured } from "./interakt";
 
 const str = (fd, k) => String(fd.get(k) ?? "").trim();
 const num = (fd, k) => {
@@ -374,6 +376,56 @@ export async function deleteImportantDay(formData) {
   refreshAgency();
 }
 
+// ------------------------------------------------------------------ whatsapp
+
+/**
+ * Sends one person their reminder over WhatsApp.
+ *
+ * The template carries only their name, two counts and a link — never task
+ * titles or client names. These messages leave through a WhatsApp Business
+ * account, and one client's work has no business appearing in another's logs.
+ *
+ * With no API key configured this returns the exact values that would be sent,
+ * so the wiring can be checked before anything goes out.
+ */
+export async function sendWhatsAppReminder(formData) {
+  await requireAdmin();
+  const memberId = num(formData, "memberId");
+  if (!memberId) return { error: "Unknown team member." };
+
+  const member = await prisma.member.findUnique({ where: { id: memberId } });
+  if (!member) return { error: "Unknown team member." };
+  if (!member.phone) return { error: `${member.name} has no WhatsApp number saved.` };
+
+  const tasks = await prisma.task.findMany({
+    where: { assigneeId: memberId, status: { not: "Completed" } },
+    select: { status: true, dueDate: true },
+  });
+
+  const b = bucket(tasks, { from: today(), days: 7, includeHold: false });
+  const needsAttention = b.overdue.length + b.dueToday.length + b.soon.length;
+
+  const bodyValues = buildReminderValues({
+    name: member.name,
+    needsAttention,
+    overdue: b.overdue.length,
+    appUrl: interaktConfig().appUrl,
+  });
+
+  if (!isConfigured()) {
+    return {
+      preview: true,
+      to: member.phone,
+      template: interaktConfig().template,
+      bodyValues,
+    };
+  }
+
+  const result = await sendTemplate({ phone: member.phone, bodyValues });
+  if (result.error) return { error: result.error };
+  return { ok: true, sentTo: member.name, needsAttention };
+}
+
 // ------------------------------------------------------------------- clients
 
 export async function createClient(formData) {
@@ -480,7 +532,11 @@ export async function updateMemberAccount(formData) {
     if (admins <= 1) return { error: "That's the only admin left." };
   }
 
-  const data = { email: str(formData, "email"), isAdmin: makeAdmin };
+  const data = {
+    email: str(formData, "email"),
+    isAdmin: makeAdmin,
+    phone: str(formData, "phone"),
+  };
   if (password) data.passwordHash = hashPassword(password);
 
   await prisma.member.update({ where: { id }, data });

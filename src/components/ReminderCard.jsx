@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import SendWhatsApp from "./SendWhatsApp";
 
 /**
  * One person's daily nudge: the tasks themselves, plus the exact text to paste
  * into WhatsApp. The message is built on the server so what's shown here is
  * literally what gets copied.
  */
-export default function ReminderCard({ name, message, counts, children }) {
+export default function ReminderCard({ name, message, counts, memberId, hasPhone, children }) {
   const [copied, setCopied] = useState(false);
   const [showText, setShowText] = useState(false);
 
@@ -46,6 +47,9 @@ export default function ReminderCard({ name, message, counts, children }) {
           <button className="btn sm ghost" onClick={() => setShowText((v) => !v)}>
             {showText ? "Hide text" : "Preview"}
           </button>
+          {counts.open ? (
+            <SendWhatsApp memberId={memberId} name={name} hasPhone={hasPhone} />
+          ) : null}
         </div>
       </header>
 

@@ -91,7 +91,17 @@ export default function MemberAccess({ member }) {
             />
           </label>
 
-          <label className="field span-4">
+          <label className="field span-2">
+            <span>WhatsApp number</span>
+            <input
+              type="tel"
+              name="phone"
+              defaultValue={member.phone}
+              placeholder="98765 43210"
+            />
+          </label>
+
+          <label className="field span-2">
             <span>Access level</span>
             <select name="isAdmin" value={isAdmin} onChange={(e) => setIsAdmin(e.target.value)}>
               <option value="no">Member — sees only their own tasks</option>

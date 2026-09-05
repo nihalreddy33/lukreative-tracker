@@ -69,6 +69,8 @@ export default async function RemindersPage({ searchParams }) {
   const groups = [
     ...[...owners.entries()].map(([id, name]) => ({
       key: String(id),
+      memberId: id,
+      hasPhone: !!members.find((m) => m.id === id)?.phone,
       name,
       tasks: tasks.filter((t) => t.assigneeId === id),
     })),
@@ -125,7 +127,14 @@ export default async function RemindersPage({ searchParams }) {
           };
 
           return (
-            <ReminderCard key={g.key} name={g.name} message={message} counts={counts}>
+            <ReminderCard
+              key={g.key}
+              name={g.name}
+              message={message}
+              counts={counts}
+              memberId={g.memberId}
+              hasPhone={g.hasPhone}
+            >
               {b.open.length ? (
                 <>
                   <Group title="Overdue" tone="red" tasks={b.overdue} from={from} showLate />

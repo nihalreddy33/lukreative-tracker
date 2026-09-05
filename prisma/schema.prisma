@@ -46,6 +46,10 @@ model Member {
   passwordHash String  @default("") // "salt:hash", empty until a password is set
   isAdmin      Boolean @default(false)
 
+  // WhatsApp, for reminders sent through Interakt. Stored without the country
+  // code, which is what their API expects.
+  phone String @default("")
+
   tasks       Task[]
   recurrences Recurrence[]
 }
