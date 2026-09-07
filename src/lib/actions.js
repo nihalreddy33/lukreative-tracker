@@ -19,7 +19,7 @@ import { STATUSES, PRIORITIES } from "./constants";
 import { FREQUENCIES, parseWeekdays } from "./recurrence";
 import { generateDueOccurrences } from "./generate-recurring";
 import { bucket } from "./reminders";
-import { sendTemplate, buildReminderValues, interaktConfig, isConfigured } from "./interakt";
+import { sendTemplate, buildReminderValues, interaktConfig, isConfigured, configSummary } from "./interakt";
 
 const str = (fd, k) => String(fd.get(k) ?? "").trim();
 const num = (fd, k) => {
@@ -424,6 +424,40 @@ export async function sendWhatsAppReminder(formData) {
   const result = await sendTemplate({ phone: member.phone, bodyValues });
   if (result.error) return { error: result.error };
   return { ok: true, sentTo: member.name, needsAttention };
+}
+
+/**
+ * Sends a reminder to an arbitrary number, for checking the Interakt wiring
+ * without having to save a real member's number first — and without messaging
+ * the team while you are still getting the template approved.
+ *
+ * Returns everything needed to diagnose a rejection: what was sent, and what
+ * Interakt said back.
+ */
+export async function sendTestWhatsApp(formData) {
+  await requireAdmin();
+
+  const phone = str(formData, "phone");
+  const name = str(formData, "name") || "there";
+  if (!phone) return { error: "Enter a WhatsApp number to test with." };
+
+  const bodyValues = buildReminderValues({
+    name,
+    needsAttention: 3,
+    overdue: 1,
+    appUrl: interaktConfig().appUrl,
+  });
+
+  const config = configSummary();
+
+  if (!isConfigured()) {
+    return { preview: true, config, phone, bodyValues };
+  }
+
+  const result = await sendTemplate({ phone, bodyValues });
+  return result.error
+    ? { error: result.error, details: result.details, status: result.status, config, bodyValues }
+    : { ok: true, id: result.id, config, phone, bodyValues };
 }
 
 // ------------------------------------------------------------------- clients

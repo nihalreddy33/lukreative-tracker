@@ -78,6 +78,12 @@ That is also a deliberate privacy boundary: **no task titles or client names are
 ever sent**. These messages leave through a WhatsApp Business account, and one
 client's work should not appear in another's message logs.
 
+**Test WhatsApp setup** on the reminders page sends one sample message to any
+number you type, and reports the current settings (with the API key reduced to a
+fingerprint) alongside whatever Interakt replied. Without that, a message which
+never arrives is impossible to diagnose — an unapproved template, a number not
+on WhatsApp, and a wrong language code all look identical from outside.
+
 Configure with `INTERAKT_API_KEY`, `INTERAKT_TEMPLATE_NAME`,
 `INTERAKT_TEMPLATE_LANG`, `INTERAKT_COUNTRY_CODE` and `APP_URL`. With no API key
 set, the button reports exactly what it *would* send instead of sending

@@ -90,7 +90,26 @@ export async function sendTemplate({ phone, bodyValues }) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data?.result === false) {
-    return { error: data?.message || `Interakt refused the message (${res.status}).` };
+    return {
+      error: data?.message || `Interakt refused the message (${res.status}).`,
+      // Their rejections say *why* — unapproved template, number not on
+      // WhatsApp, wrong language code — so pass it through rather than
+      // flattening it to a status code.
+      status: res.status,
+      details: JSON.stringify(data).slice(0, 400),
+    };
   }
   return { ok: true, id: data?.id ?? null };
+}
+
+/** What's configured, with the key reduced to a fingerprint. Safe to display. */
+export function configSummary() {
+  const cfg = interaktConfig();
+  return {
+    apiKey: cfg.apiKey ? `set (${cfg.apiKey.length} chars, ends …${cfg.apiKey.slice(-4)})` : "NOT SET",
+    template: cfg.template,
+    languageCode: cfg.languageCode,
+    countryCode: cfg.countryCode,
+    appUrl: cfg.appUrl || "NOT SET — the link in the message will read \"the tracker\"",
+  };
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ReminderCard from "@/components/ReminderCard";
 import CopyTeamMessage from "@/components/CopyTeamMessage";
+import WhatsAppTest from "@/components/WhatsAppTest";
 import AutoRefresh from "@/components/AutoRefresh";
 import { Card, Empty } from "@/components/ui";
 import { bucket, buildReminder, buildTeamReminder, shortDate, headerDate } from "@/lib/reminders";
@@ -92,6 +93,7 @@ export default async function RemindersPage({ searchParams }) {
         <div className="row">
           <AutoRefresh />
           {anyOpen ? <CopyTeamMessage message={teamMessage} /> : null}
+          <WhatsAppTest />
           <Link className="btn" href="/tasks">Open task list</Link>
         </div>
       </header>
